@@ -395,7 +395,7 @@ select.input {
 /* ── FAB ── */
 .fab {
   position: fixed;
-  bottom: 76px;
+  bottom: 100px;
   right: 16px;
   width: 56px;
   height: 56px;
