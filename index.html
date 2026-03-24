@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Listerfy</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" type="image/svg+xml" href="logo.svg"/>
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+    .auth-wrap { width:min(400px,100%); display:flex; flex-direction:column; gap:24px; }
+
+    .brand { text-align:center; display:flex; flex-direction:column; align-items:center; gap:12px; }
+    .brand-logo {
+      width:72px; height:72px; border-radius:50%;
+      background:var(--brand); display:flex; align-items:center; justify-content:center;
+      box-shadow:0 8px 24px rgba(52,176,128,.4);
+    }
+    .brand-logo svg { width:40px; height:40px; }
+    .brand h1 { font-size:var(--fs-2xl); font-weight:900; color:var(--text-1); }
+    .brand p  { font-size:var(--fs-sm); color:var(--text-3); }
+
+    .auth-card { background:var(--bg-2); border-radius:var(--r-xl); padding:24px; border:1px solid var(--border); }
+
+    .auth-tabs { display:flex; background:var(--bg-3); border-radius:var(--r-full); padding:4px; margin-bottom:22px; }
+    .auth-tab {
+      flex:1; padding:8px; border:none; border-radius:var(--r-full); background:transparent;
+      font-family:var(--font); font-size:var(--fs-sm); font-weight:700; color:var(--text-3); cursor:pointer;
+      transition:all var(--transition);
+    }
+    .auth-tab.active { background:var(--bg-4); color:var(--text-1); }
+
+    .auth-form { display:flex; flex-direction:column; gap:14px; }
+    .auth-form.hidden { display:none; }
+
+    .error-box {
+      background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3);
+      color:var(--red); border-radius:var(--r-sm); padding:10px 14px;
+      font-size:var(--fs-sm); font-weight:600; display:none;
+    }
+    .error-box.show { display:block; }
+
+    .lang-row { display:flex; justify-content:center; gap:8px; }
+    .lang-opt {
+      padding:5px 14px; border-radius:var(--r-full); border:1.5px solid var(--border-2);
+      background:none; font-family:var(--font); font-size:var(--fs-xs); font-weight:700;
+      color:var(--text-3); cursor:pointer; transition:all var(--transition);
+    }
+    .lang-opt.active { border-color:var(--brand); color:var(--brand); background:rgba(52,176,128,.1); }
+  </style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="brand">
+    <div class="brand-logo">
+      <svg viewBox="0 0 377.87 347.58" xmlns="http://www.w3.org/2000/svg" fill="white">
+        <path d="M154.2,211.57c-35.21-34.4-68.39-71.02-103.88-105.16l96.8,173.21c5.26,9.01,18.37,10.12,25.07,2.13L377.87,9.71c-.29,2.45-1.62,4.98-2.6,7.27-12.8,30.03-27.84,59.22-40.8,89.19,28.97,70.14,9.77,151.17-47.84,200.13-82.99,70.53-209.83,47.79-263.68-46.2C-24.9,176.57,4.67,70.26,87.56,22.79,163.68-20.82,262.52-.2,313.73,70.67l-154.51,144.37c-2.46,1.18-3.6-2.07-5.03-3.47Z"/>
+      </svg>
+    </div>
+    <h1>Listerfy</h1>
+    <p data-i18n="tagline">Listas de compras compartidas</p>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')" data-i18n="login">Iniciar sesión</button>
+      <button class="auth-tab" id="tab-register" onclick="switchTab('register')" data-i18n="register">Registrarse</button>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+
+    <!-- Login -->
+    <form class="auth-form" id="form-login" onsubmit="handleLogin(event)">
+      <div class="input-group">
+        <label class="input-label" data-i18n="email">Correo</label>
+        <input class="input" type="email" id="login-email" autocomplete="email" required data-i18n-placeholder="email" placeholder="Correo electrónico"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label" data-i18n="password">Contraseña</label>
+        <input class="input" type="password" id="login-password" autocomplete="current-password" required data-i18n-placeholder="password" placeholder="Contraseña"/>
+      </div>
+      <button class="btn btn-brand btn-full btn-lg" type="submit" id="btn-login">
+        <span data-i18n="loginBtn">Entrar</span>
+      </button>
+    </form>
+
+    <!-- Register step 1: form -->
+    <form class="auth-form hidden" id="form-register" onsubmit="handleRegister(event)">
+      <div class="input-group">
+        <label class="input-label" data-i18n="displayName">Tu nombre</label>
+        <input class="input" type="text" id="reg-name" autocomplete="name" required data-i18n-placeholder="displayName" placeholder="Tu nombre"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label" data-i18n="email">Correo</label>
+        <input class="input" type="email" id="reg-email" autocomplete="email" required data-i18n-placeholder="email" placeholder="Correo electrónico"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label" data-i18n="password">Contraseña</label>
+        <input class="input" type="password" id="reg-password" autocomplete="new-password" required data-i18n-placeholder="password" placeholder="Contraseña"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label" data-i18n="confirmPassword">Confirmar</label>
+        <input class="input" type="password" id="reg-confirm" autocomplete="new-password" required data-i18n-placeholder="confirmPassword" placeholder="Confirmar contraseña"/>
+      </div>
+      <button class="btn btn-brand btn-full btn-lg" type="submit" id="btn-register">
+        <span data-i18n="registerBtn">Crear cuenta</span>
+      </button>
+    </form>
+
+    <!-- Register step 2: OTP verification -->
+    <div class="auth-form hidden" id="form-otp">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:2rem;margin-bottom:8px">📧</div>
+        <p style="font-size:var(--fs-sm);color:var(--text-2);line-height:1.5">
+          Te enviamos un código de verificación a<br/>
+          <strong id="otp-email-display" style="color:var(--text-1)"></strong>
+        </p>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Código de verificación</label>
+        <input class="input" type="text" id="otp-code" 
+               placeholder="000000" maxlength="6"
+               style="text-align:center;font-size:1.6rem;font-weight:800;letter-spacing:8px;font-family:monospace"
+               oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
+      </div>
+      <button class="btn btn-brand btn-full btn-lg" onclick="verifyOTP()" id="btn-verify">
+        <span>Verificar código</span>
+      </button>
+      <button class="btn btn-ghost btn-full" onclick="resendOTP()" id="btn-resend" style="margin-top:4px;color:var(--text-3);font-size:var(--fs-sm)">
+        ¿No llegó? Reenviar código
+      </button>
+    </div>
+  </div>
+
+  <div class="lang-row">
+    <button class="lang-opt" id="lang-es" onclick="setLang('es');updateLangBtns()">ES</button>
+    <button class="lang-opt" id="lang-en" onclick="setLang('en');updateLangBtns()">EN</button>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="i18n.js"></script>
+<script src="supabase.js"></script>
+<script>
+  (async () => {
+    const s = await getSession();
+    if (s) location.href = 'app.html';
+  })();
+
+  applyTranslations();
+  updateLangBtns();
+
+  function updateLangBtns() {
+    document.getElementById('lang-es').classList.toggle('active', currentLang === 'es');
+    document.getElementById('lang-en').classList.toggle('active', currentLang === 'en');
+  }
+
+  function switchTab(tab) {
+    const login = tab === 'login';
+    document.getElementById('tab-login').classList.toggle('active', login);
+    document.getElementById('tab-register').classList.toggle('active', !login);
+    document.getElementById('form-login').classList.toggle('hidden', !login);
+    document.getElementById('form-register').classList.toggle('hidden', login);
+    hideError();
+  }
+
+  function showError(msg) { const b = document.getElementById('error-box'); b.textContent = msg; b.classList.add('show'); }
+  function hideError()    { document.getElementById('error-box').classList.remove('show'); }
+
+  async function handleLogin(e) {
+    e.preventDefault(); hideError();
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true; btn.querySelector('span').textContent = t('loggingIn');
+    const { error } = await db.auth.signInWithPassword({
+      email: document.getElementById('login-email').value.trim(),
+      password: document.getElementById('login-password').value
+    });
+    if (error) { showError(error.message); btn.disabled = false; btn.querySelector('span').textContent = t('loginBtn'); return; }
+    location.href = 'app.html';
+  }
+
+  // Store pending registration data
+  let _pendingReg = {};
+
+  async function handleRegister(e) {
+    e.preventDefault(); hideError();
+    const name  = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass  = document.getElementById('reg-password').value;
+    const conf  = document.getElementById('reg-confirm').value;
+    if (pass.length < 6) { showError(t('weakPassword')); return; }
+    if (pass !== conf)   { showError(t('passwordMismatch')); return; }
+
+    const btn = document.getElementById('btn-register');
+    btn.disabled = true; btn.querySelector('span').textContent = t('registering');
+
+    // Sign up — Supabase sends OTP to email
+    const { error } = await db.auth.signUp({
+      email, password: pass,
+      options: { data: { display_name: name } }
+    });
+
+    btn.disabled = false; btn.querySelector('span').textContent = t('registerBtn');
+    if (error) { showError(error.message); return; }
+
+    // Save pending data and show OTP screen
+    _pendingReg = { name, email, pass };
+    document.getElementById('form-register').classList.add('hidden');
+    document.getElementById('form-otp').classList.remove('hidden');
+    document.getElementById('otp-email-display').textContent = email;
+    document.getElementById('otp-code').focus();
+  }
+
+  async function verifyOTP() {
+    const token = document.getElementById('otp-code').value.trim();
+    if (token.length < 6) { showError('Ingresa el código de 6 dígitos'); return; }
+
+    const btn = document.getElementById('btn-verify');
+    btn.disabled = true; btn.querySelector('span').textContent = 'Verificando...';
+
+    const { error } = await db.auth.verifyOtp({
+      email: _pendingReg.email,
+      token: token,
+      type: 'signup'
+    });
+
+    btn.disabled = false; btn.querySelector('span').textContent = 'Verificar código';
+    if (error) { showError(error.message || 'Código inválido o expirado'); return; }
+
+    // Update display name in profile
+    const user = (await db.auth.getUser()).data.user;
+    if (user && _pendingReg.name) {
+      await db.from('profiles').update({ display_name: _pendingReg.name }).eq('id', user.id);
+    }
+    location.href = 'app.html';
+  }
+
+  async function resendOTP() {
+    const btn = document.getElementById('btn-resend');
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    await db.auth.resend({ type: 'signup', email: _pendingReg.email });
+    btn.disabled = false; btn.textContent = '¿No llegó? Reenviar código';
+    showError(''); // clear errors
+  }
+</script>
+</body>
+</html>

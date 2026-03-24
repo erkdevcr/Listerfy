@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Listerfy — Perfil</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" type="image/svg+xml" href="logo.svg"/>
+  <style>
+    .profile-avatar-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 28px 16px 16px; gap: 10px;
+    }
+    .profile-avatar-big {
+      width: 72px; height: 72px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; font-weight: 800; color: #fff;
+    }
+    .profile-name-big { font-size: var(--fs-xl); font-weight: 800; }
+    .profile-email-big { font-size: var(--fs-sm); color: var(--text-3); }
+  .nav-icon svg { color: #436e60; }
+  body.light .nav-icon svg { color: #8bc7b3; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <span class="topbar-title" data-i18n="profile">Profile</span>
+  </div>
+
+  <div class="page-content" id="page-content">
+    <div class="empty-state"><div class="spinner spinner-brand"></div></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab" onclick="location.href='app.html'">
+      <span class="nav-icon"><svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="26" height="26"><path d="M134.4,345.6c-8.53,0-14.93,6.4-14.93,14.93s6.4,14.93,14.93,14.93,14.93-6.4,14.93-14.93-6.4-14.93-14.93-14.93Z"/><path d="M134.4,238.93c-8.53,0-14.93,6.4-14.93,14.93s6.4,14.93,14.93,14.93,14.93-6.4,14.93-14.93c0-10.67-6.4-14.93-14.93-14.93Z"/><path d="M256,0C114.62,0,0,114.62,0,256s114.62,256,256,256,256-114.62,256-256S397.38,0,256,0ZM134.4,405.33c-25.6,0-46.93-19.2-46.93-46.93,0-25.6,19.2-46.93,46.93-46.93s46.93,19.2,46.93,46.93c-2.13,27.73-21.33,46.93-46.93,46.93ZM134.4,298.67c-25.6,0-46.93-19.2-46.93-46.93s19.2-44.8,46.93-44.8,46.93,19.2,46.93,46.93-21.33,44.8-46.93,44.8ZM183.47,132.27l-46.93,46.93c-2.13,4.27-6.4,4.27-10.67,4.27s-8.53-2.13-10.67-4.27l-23.47-23.47c-6.4-4.27-6.4-14.93,0-21.33s14.93-6.4,21.33,0l12.8,12.8,36.27-36.27c6.4-6.4,14.93-6.4,21.33,0s6.4,14.93,0,21.33ZM409.6,375.47h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93ZM409.6,268.8h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93ZM409.6,162.13h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93Z"/></svg></span>
+      <span data-i18n="lists">Lists</span>
+    </button>
+    <button class="nav-tab active">
+      <span class="nav-icon"><svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="26" height="26"><ellipse cx="256" cy="122.8" rx="104.4" ry="114.8"/><path d="M471.1,430.9c-30.4-89.6-115.2-154-215.1-154s-184.7,64.4-215.1,154c-12.2,35.9,14.3,73.1,52.1,73.1h326c37.9,0,64.3-37.2,52.1-73.1Z"/></svg></span>
+      <span data-i18n="profile">Profile</span>
+    </button>
+  </nav>
+</div>
+
+<!-- Modal: edit field -->
+<div class="modal-overlay hidden centered" id="modal-edit-field">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="field-modal-title"></div>
+    <div class="modal-body">
+      <div class="input-group" id="field-inputs"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-edit-field').classList.add('hidden')" data-i18n="cancel">Cancelar</button>
+      <button class="btn btn-brand" id="btn-save-field" onclick="saveField()"><span data-i18n="save">Guardar</span></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="i18n.js"></script>
+<script src="supabase.js"></script>
+<script>
+  const AVATAR_COLORS = ['#16a34a','#0284c7','#7c3aed','#db2777','#ea580c','#0891b2','#65a30d','#d97706'];
+  function avatarColor(s='') { let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length]; }
+  function avatarInitials(n='') { return n.trim().split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?'; }
+
+  var currentUser=null, currentProfile=null, activeField=null;
+
+  window.addEventListener('load', function() {
+    requireAuth().then(function(user) {
+      if (!user) return;
+      currentUser = user;
+      db.from('profiles').select('*').eq('id', user.id).single().then(function(res) {
+        currentProfile = res.data;
+        applyTranslations();
+        renderProfile();
+      });
+    });
+  });
+
+  function renderProfile() {
+    const name  = currentProfile?.display_name || '';
+    const email = currentUser.email || '';
+    const theme = localStorage.getItem('theme') || 'dark';
+    const lang  = currentLang;
+    const fs    = localStorage.getItem('fontSize') || 'normal';
+
+    document.getElementById('page-content').innerHTML = `
+      <!-- Avatar -->
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar-big" style="background:${avatarColor(name)}">${avatarInitials(name)}</div>
+        <div class="profile-name-big">${esc(name)}</div>
+        <div class="profile-email-big">${esc(email)}</div>
+      </div>
+
+      <!-- Account section -->
+      <div class="profile-section">
+        <div class="profile-section-title">${currentLang==='es'?'Cuenta':'Account'}</div>
+        <div class="profile-row" onclick="openField('name')">
+          <span class="profile-row-label" data-i18n="changeName">${t('changeName')}</span>
+          <span class="profile-row-value">${esc(name)} ›</span>
+        </div>
+        <div class="profile-row" onclick="openField('email')">
+          <span class="profile-row-label" data-i18n="changeEmail">${t('changeEmail')}</span>
+          <span class="profile-row-value">${esc(email)} ›</span>
+        </div>
+        <div class="profile-row" onclick="openField('password')">
+          <span class="profile-row-label" data-i18n="changePassword">${t('changePassword')}</span>
+          <span class="profile-row-value">••••••• ›</span>
+        </div>
+      </div>
+
+      <!-- Preferences section -->
+      <div class="profile-section">
+        <div class="profile-section-title">${currentLang==='es'?'Preferencias':'Preferences'}</div>
+
+        <!-- Dark mode -->
+        <div class="profile-row" style="cursor:default">
+          <span class="profile-row-label" data-i18n="darkMode">${t('darkMode')}</span>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-theme" ${theme==='dark'?'checked':''} onchange="toggleTheme(this.checked)"/>
+            <div class="toggle-track"></div>
+          </label>
+        </div>
+
+        <!-- Language -->
+        <div class="profile-row" style="cursor:default">
+          <span class="profile-row-label" data-i18n="language">${t('language')}</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm ${lang==='es'?'btn-brand':'btn-outline'}" onclick="changeLang('es')">ES</button>
+            <button class="btn btn-sm ${lang==='en'?'btn-brand':'btn-outline'}" onclick="changeLang('en')">EN</button>
+          </div>
+        </div>
+
+        <!-- Font size -->
+        <div class="profile-row" style="cursor:default;flex-direction:column;align-items:flex-start;gap:10px">
+          <span class="profile-row-label" data-i18n="fontSize">${t('fontSize')}</span>
+          <div class="font-size-opts w-full">
+            <button class="font-size-opt ${fs==='small'?'active':''}" onclick="setFontSize('small')" data-i18n="fontSmall">${t('fontSmall')}</button>
+            <button class="font-size-opt ${fs==='normal'?'active':''}" onclick="setFontSize('normal')" data-i18n="fontNormal">${t('fontNormal')}</button>
+            <button class="font-size-opt ${fs==='large'?'active':''}" onclick="setFontSize('large')" data-i18n="fontLarge">${t('fontLarge')}</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div style="padding:16px">
+        <button class="btn btn-danger btn-full btn-lg" onclick="handleLogout()" data-i18n="logout">${t('logout')}</button>
+        <p style="text-align:center;padding:16px 0 8px;font-size:var(--fs-xs);color:var(--text-3)">© 2026 ErkDev</p>
+      </div>
+    `;
+  }
+
+  // ── Theme ──
+  function toggleTheme(isDark) {
+    const theme = isDark ? 'dark' : 'light';
+    localStorage.setItem('theme', theme);
+    document.body.classList.toggle('light', !isDark);
+  }
+
+  // ── Language ──
+  function changeLang(lang) {
+    setLang(lang);
+    renderProfile();
+  }
+
+  // ── Font size ──
+  function setFontSize(size) {
+    localStorage.setItem('fontSize', size);
+    document.body.classList.remove('font-small','font-normal','font-large');
+    document.body.classList.add('font-' + size);
+    renderProfile();
+  }
+
+  // ── Edit field ──
+  function openField(field) {
+    activeField = field;
+    const title = document.getElementById('field-modal-title');
+    const inputs = document.getElementById('field-inputs');
+
+    if (field === 'name') {
+      title.textContent = t('changeName');
+      inputs.innerHTML = `<label class="input-label" data-i18n="newName">${t('newName')}</label>
+        <input class="input" type="text" id="field-val" value="${esc(currentProfile?.display_name||'')}" maxlength="60"/>`;
+    } else if (field === 'email') {
+      title.textContent = t('changeEmail');
+      inputs.innerHTML = `<label class="input-label" data-i18n="newEmail">${t('newEmail')}</label>
+        <input class="input" type="email" id="field-val" value="${esc(currentUser.email||'')}"/>`;
+    } else if (field === 'password') {
+      title.textContent = t('changePassword');
+      inputs.innerHTML = `<label class="input-label" data-i18n="newPassword">${t('newPassword')}</label>
+        <input class="input" type="password" id="field-val" placeholder="••••••••" minlength="6"/>`;
+    }
+
+    document.getElementById('modal-edit-field').classList.remove('hidden');
+    setTimeout(() => document.getElementById('field-val')?.focus(), 100);
+  }
+
+  async function saveField() {
+    const val = document.getElementById('field-val')?.value?.trim();
+    if (!val) return;
+    const btn = document.getElementById('btn-save-field');
+    btn.disabled = true; btn.querySelector('span').textContent = t('saving');
+
+    let error = null;
+    if (activeField === 'name') {
+      const { error: e } = await db.from('profiles').update({ display_name: val }).eq('id', currentUser.id);
+      if (!e) currentProfile.display_name = val;
+      error = e;
+    } else if (activeField === 'email') {
+      const { error: e } = await db.auth.updateUser({ email: val });
+      error = e;
+    } else if (activeField === 'password') {
+      const { error: e } = await db.auth.updateUser({ password: val });
+      error = e;
+    }
+
+    btn.disabled = false; btn.querySelector('span').textContent = t('save');
+    if (error) { showToast(error.message || t('errorGeneral'), 'error'); return; }
+    document.getElementById('modal-edit-field').classList.add('hidden');
+    showToast('✓', 'success');
+    renderProfile();
+  }
+
+  async function handleLogout() {
+    await db.auth.signOut();
+    location.href = 'index.html';
+  }
+
+  function esc(s='') { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>

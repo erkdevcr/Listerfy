@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Listerfy</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" type="image/svg+xml" href="logo.svg"/>
+  <style>
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 80;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+    }
+    .app-header-logo {
+      width: 30px; height: 30px;
+      background: var(--brand);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .app-header-logo svg { width: 17px; height: 17px; }
+    .app-header-name {
+      font-size: var(--fs-lg);
+      font-weight: 900;
+      color: var(--brand);
+      letter-spacing: -.01em;
+    }
+    .app-header-notif {
+      margin-left: auto;
+      position: relative;
+    }
+  </style>
+  <style>
+    .page-header {
+      padding: 16px 16px 8px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .page-header h1 { font-size: var(--fs-2xl); font-weight: 900; }
+
+    /* Notif panel */
+    .notif-wrap { position: relative; }
+    .notif-panel {
+      position: absolute; top: calc(100% + 8px); right: 0;
+      width: min(320px, calc(100vw - 32px));
+      background: var(--bg-3); border: 1px solid var(--border-2);
+      border-radius: var(--r-xl); box-shadow: var(--shadow-lg);
+      z-index: 300; overflow: hidden; animation: fadeScaleIn .12s ease;
+    }
+    .notif-panel.hidden { display: none; }
+    .notif-panel-hdr { padding: 12px 14px 8px; font-size: var(--fs-xs); font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; }
+    .notif-list { max-height: 320px; overflow-y: auto; }
+    .notif-item { padding: 12px 14px; border-top: 1px solid var(--border); }
+    .notif-item.unread { background: rgba(52,176,128,.06); }
+    .notif-text { font-size: var(--fs-sm); font-weight: 600; color: var(--text-1); line-height: 1.4; }
+    .notif-time { font-size: var(--fs-xs); color: var(--text-3); margin-top: 3px; }
+    .notif-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+    /* Kebab menu for list card */
+    .card-menu-wrap { position: absolute; top: 10px; right: 10px; }
+    .card-menu { top: 28px; }
+  .nav-icon svg { color: #436e60; }
+  body.light .nav-icon svg { color: #8bc7b3; }
+  .app-header-notif svg { color: #436e60; }
+  body.light .app-header-notif svg { color: #8bc7b3; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <!-- Sticky Header - OUTSIDE page-content so it never gets replaced -->
+  <div class="app-header">
+    <div class="app-header-logo">
+      <svg viewBox="0 0 377.87 347.58" xmlns="http://www.w3.org/2000/svg" fill="white">
+        <path d="M154.2,211.57c-35.21-34.4-68.39-71.02-103.88-105.16l96.8,173.21c5.26,9.01,18.37,10.12,25.07,2.13L377.87,9.71c-.29,2.45-1.62,4.98-2.6,7.27-12.8,30.03-27.84,59.22-40.8,89.19,28.97,70.14,9.77,151.17-47.84,200.13-82.99,70.53-209.83,47.79-263.68-46.2C-24.9,176.57,4.67,70.26,87.56,22.79,163.68-20.82,262.52-.2,313.73,70.67l-154.51,144.37c-2.46,1.18-3.6-2.07-5.03-3.47Z"/>
+      </svg>
+    </div>
+    <span class="app-header-name">Listerfy</span>
+    <div class="app-header-notif dropdown-wrap" id="notif-wrap">
+      <button class="btn btn-ghost btn-icon" id="notif-btn" style="position:relative">
+        <span class="nav-icon"><svg viewBox="-21 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="22" height="22"><path d="m448 232.148438c-11.777344 0-21.332031-9.554688-21.332031-21.332032 0-59.839844-23.296875-116.074218-65.601563-158.402344-8.339844-8.339843-8.339844-21.820312 0-30.164062 8.339844-8.339844 21.824219-8.339844 30.164063 0 50.371093 50.367188 78.101562 117.335938 78.101562 188.566406 0 11.777344-9.554687 21.332032-21.332031 21.332032zm0 0"/><path d="m21.332031 232.148438c-11.773437 0-21.332031-9.554688-21.332031-21.332032 0-71.230468 27.734375-138.199218 78.101562-188.566406 8.339844-8.339844 21.824219-8.339844 30.164063 0 8.34375 8.34375 8.34375 21.824219 0 30.164062-42.304687 42.304688-65.597656 98.5625-65.597656 158.402344 0 11.777344-9.558594 21.332032-21.335938 21.332032zm0 0"/><path d="m434.753906 360.8125c-32.257812-27.265625-50.753906-67.117188-50.753906-109.335938v-59.476562c0-75.070312-55.765625-137.214844-128-147.625v-23.042969c0-11.796875-9.558594-21.332031-21.332031-21.332031-11.777344 0-21.335938 9.535156-21.335938 21.332031v23.042969c-72.253906 10.410156-128 72.554688-128 147.625v59.476562c0 42.21875-18.496093 82.070313-50.941406 109.503907-8.300781 7.105469-13.058594 17.429687-13.058594 28.351562 0 20.589844 16.746094 37.335938 37.335938 37.335938h352c20.585937 0 37.332031-16.746094 37.332031-37.335938 0-10.921875-4.757812-21.246093-13.246094-28.519531zm0 0"/><path d="m234.667969 512c38.632812 0 70.953125-27.542969 78.378906-64h-156.757813c7.421876 36.457031 39.742188 64 78.378907 64zm0 0"/></svg></span>
+        <span class="nav-badge hidden" id="notif-badge">0</span>
+      </button>
+      <div class="notif-panel hidden" id="notif-panel">
+        <div class="notif-panel-hdr" data-i18n="notifications">Notificaciones</div>
+        <div class="notif-list" id="notif-list">
+          <div style="padding:20px;text-align:center;color:var(--text-3);font-size:var(--fs-sm)" data-i18n="noNotifications">Sin notificaciones</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Lists title - also outside page-content -->
+  <div style="padding:16px 16px 4px;background:var(--bg)">
+    <h2 style="font-size:var(--fs-xl);font-weight:800;color:var(--text-1)" data-i18n="myLists">Tus listas</h2>
+  </div>
+  <div class="page-content" id="page-content">
+
+    <!-- Lists container -->
+    <div id="lists-container">
+      <div class="empty-state"><div class="spinner spinner-brand"></div></div>
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <button class="nav-tab active" id="tab-lists">
+      <span class="nav-icon"><svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="26" height="26"><path d="M134.4,345.6c-8.53,0-14.93,6.4-14.93,14.93s6.4,14.93,14.93,14.93,14.93-6.4,14.93-14.93-6.4-14.93-14.93-14.93Z"/><path d="M134.4,238.93c-8.53,0-14.93,6.4-14.93,14.93s6.4,14.93,14.93,14.93,14.93-6.4,14.93-14.93c0-10.67-6.4-14.93-14.93-14.93Z"/><path d="M256,0C114.62,0,0,114.62,0,256s114.62,256,256,256,256-114.62,256-256S397.38,0,256,0ZM134.4,405.33c-25.6,0-46.93-19.2-46.93-46.93,0-25.6,19.2-46.93,46.93-46.93s46.93,19.2,46.93,46.93c-2.13,27.73-21.33,46.93-46.93,46.93ZM134.4,298.67c-25.6,0-46.93-19.2-46.93-46.93s19.2-44.8,46.93-44.8,46.93,19.2,46.93,46.93-21.33,44.8-46.93,44.8ZM183.47,132.27l-46.93,46.93c-2.13,4.27-6.4,4.27-10.67,4.27s-8.53-2.13-10.67-4.27l-23.47-23.47c-6.4-4.27-6.4-14.93,0-21.33s14.93-6.4,21.33,0l12.8,12.8,36.27-36.27c6.4-6.4,14.93-6.4,21.33,0s6.4,14.93,0,21.33ZM409.6,375.47h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93ZM409.6,268.8h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93ZM409.6,162.13h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93Z"/></svg></span>
+      <span data-i18n="lists">Lists</span>
+      <span class="nav-badge hidden" id="nav-badge">0</span>
+    </button>
+    <button class="nav-tab" onclick="location.href='profile.html'" id="tab-profile">
+      <span class="nav-icon"><svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="26" height="26"><ellipse cx="256" cy="122.8" rx="104.4" ry="114.8"/><path d="M471.1,430.9c-30.4-89.6-115.2-154-215.1-154s-184.7,64.4-215.1,154c-12.2,35.9,14.3,73.1,52.1,73.1h326c37.9,0,64.3-37.2,52.1-73.1Z"/></svg></span>
+      <span data-i18n="profile">Profile</span>
+    </button>
+  </nav>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openNewList()" title="Nueva lista">+</button>
+
+<!-- Modal: nueva lista -->
+<div class="modal-overlay hidden centered" id="modal-new-list">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="newList">Nueva lista</div>
+    <div class="modal-body">
+      <div class="input-group">
+        <label class="input-label" data-i18n="listName">Nombre</label>
+        <input class="input" type="text" id="new-list-name" maxlength="60"
+               data-i18n-placeholder="listName" placeholder="Nombre de la lista"
+               onkeydown="if(event.key==='Enter') createList()"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeNewList()" data-i18n="cancel">Cancelar</button>
+      <button class="btn btn-brand" id="btn-create" onclick="createList()">
+        <span data-i18n="createList">Crear lista</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: renombrar lista -->
+<div class="modal-overlay hidden centered" id="modal-rename">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="rename">Renombrar</div>
+    <div class="modal-body">
+      <div class="input-group">
+        <input class="input" type="text" id="rename-input" maxlength="60"
+               onkeydown="if(event.key==='Enter') confirmRename()"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-rename').classList.add('hidden')" data-i18n="cancel">Cancelar</button>
+      <button class="btn btn-brand" onclick="confirmRename()" data-i18n="save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: invite -->
+<div class="modal-overlay hidden centered" id="modal-invite">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="invite">Compartir</div>
+    <div class="modal-body">
+      <div class="input-group">
+        <label class="input-label" data-i18n="inviteEmail">Correo</label>
+        <input class="input" type="email" id="invite-email-input"
+               data-i18n-placeholder="inviteEmail" placeholder="Correo a invitar"/>
+      </div>
+      <p class="text-muted" style="font-size:var(--fs-xs)" id="invite-msg"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-invite').classList.add('hidden')" data-i18n="cancel">Cancelar</button>
+      <button class="btn btn-brand" id="btn-send-invite" onclick="sendInvite()">
+        <span data-i18n="sendInvite">Enviar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: confirmación -->
+<div class="modal-overlay hidden centered" id="modal-confirm">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="confirm-title"></div>
+    <div class="modal-body"><p id="confirm-msg" style="font-size:var(--fs-sm);color:var(--text-2)"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-confirm').classList.add('hidden')" data-i18n="cancel">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirm-ok"></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="i18n.js"></script>
+<script src="supabase.js"></script>
+<script src="app.js?v=7"></script>
+</body>
+</html>

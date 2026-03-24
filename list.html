@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Listerfy</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" type="image/svg+xml" href="logo.svg"/>
+</head>
+<body>
+<div class="page">
+  <!-- Topbar -->
+  <div class="topbar" id="topbar">
+    <button class="topbar-back" id="back-btn" onclick="location.href='app.html'" style="padding:0 8px 2px 0;line-height:1;display:flex;align-items:center;"><svg viewBox="0 0 492 492" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="26" height="26"><path d="M7.86,265.12l177.68,177.68c5.07,5.07,11.83,7.86,19.04,7.86s13.97-2.79,19.04-7.86l16.13-16.14c5.07-5.06,7.86-11.83,7.86-19.04s-2.79-14.2-7.86-19.26l-103.66-103.88h329.32c14.85,0,26.58-11.62,26.58-26.48v-22.81c0-14.85-11.73-27.65-26.58-27.65H134.93l104.83-104.46c5.07-5.07,7.86-11.65,7.86-18.86s-2.79-13.88-7.86-18.95l-16.13-16.08c-5.07-5.07-11.83-7.84-19.04-7.84s-13.97,2.8-19.04,7.87L7.86,226.9C2.78,231.99-.02,238.78,0,246c-.02,7.24,2.78,14.04,7.86,19.12Z"/></svg></button>
+    <span class="topbar-title truncate" id="list-title">…</span>
+    <div class="topbar-actions" id="topbar-actions"></div>
+  </div>
+
+  <!-- Progress bar under topbar -->
+  <div style="height:3px;background:var(--bg-4)">
+    <div id="top-progress" style="height:100%;background:var(--brand);width:0%;transition:width .4s ease"></div>
+  </div>
+
+  <div class="page-content" id="page-content">
+    <div class="empty-state"><div class="spinner spinner-brand"></div></div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <button class="nav-tab" onclick="location.href='app.html'">
+      <span class="nav-icon"><svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="26" height="26"><path d="M134.4,345.6c-8.53,0-14.93,6.4-14.93,14.93s6.4,14.93,14.93,14.93,14.93-6.4,14.93-14.93-6.4-14.93-14.93-14.93Z"/><path d="M134.4,238.93c-8.53,0-14.93,6.4-14.93,14.93s6.4,14.93,14.93,14.93,14.93-6.4,14.93-14.93c0-10.67-6.4-14.93-14.93-14.93Z"/><path d="M256,0C114.62,0,0,114.62,0,256s114.62,256,256,256,256-114.62,256-256S397.38,0,256,0ZM134.4,405.33c-25.6,0-46.93-19.2-46.93-46.93,0-25.6,19.2-46.93,46.93-46.93s46.93,19.2,46.93,46.93c-2.13,27.73-21.33,46.93-46.93,46.93ZM134.4,298.67c-25.6,0-46.93-19.2-46.93-46.93s19.2-44.8,46.93-44.8,46.93,19.2,46.93,46.93-21.33,44.8-46.93,44.8ZM183.47,132.27l-46.93,46.93c-2.13,4.27-6.4,4.27-10.67,4.27s-8.53-2.13-10.67-4.27l-23.47-23.47c-6.4-4.27-6.4-14.93,0-21.33s14.93-6.4,21.33,0l12.8,12.8,36.27-36.27c6.4-6.4,14.93-6.4,21.33,0s6.4,14.93,0,21.33ZM409.6,375.47h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93ZM409.6,268.8h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93ZM409.6,162.13h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93Z"/></svg></span>
+      <span data-i18n="lists">Lists</span>
+    </button>
+    <button class="nav-tab" onclick="location.href='profile.html'">
+      <span class="nav-icon"><svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="26" height="26"><ellipse cx="256" cy="122.8" rx="104.4" ry="114.8"/><path d="M471.1,430.9c-30.4-89.6-115.2-154-215.1-154s-184.7,64.4-215.1,154c-12.2,35.9,14.3,73.1,52.1,73.1h326c37.9,0,64.3-37.2,52.1-73.1Z"/></svg></span>
+      <span data-i18n="profile">Profile</span>
+    </button>
+  </nav>
+</div>
+
+<!-- Add pill (fixed) -->
+<div class="add-pill" id="add-pill">
+  <button class="add-pill-main" onclick="focusAddInput()" data-i18n="add">+ Add</button>
+  <button class="add-pill-chevron" onclick="toggleAddPanel()">▾</button>
+</div>
+
+<!-- Add panel (expanded) -->
+<div class="add-panel hidden" id="add-panel">
+  <div style="display:flex;gap:8px;align-items:center">
+    <input class="input" type="text" id="item-input" style="flex:1"
+           data-i18n-placeholder="itemName" placeholder="Escribe un artículo..."
+           onkeydown="if(event.key==='Enter') addItem()"/>
+    <button class="btn btn-brand" onclick="addItem()" id="btn-add-item" data-i18n="add">+ Add</button>
+  </div>
+  <div style="display:flex;gap:8px">
+    <select class="input" id="item-cat" style="flex:2"></select>
+    <input class="input" type="text" id="item-qty" style="flex:1;min-width:80px"
+           data-i18n-placeholder="quantity" placeholder="Cantidad" maxlength="20"/>
+  </div>
+</div>
+
+<!-- Action bar (long press) -->
+<div class="action-bar hidden" id="action-bar">
+  <button class="action-bar-btn" onclick="clearSelection()">✕</button>
+  <button class="action-bar-btn" onclick="editSelected()" data-i18n="edit">EDIT</button>
+  <button class="action-bar-btn" onclick="openCopyModal()" data-i18n="copy">COPY</button>
+  <button class="action-bar-btn" onclick="deleteSelected()" data-i18n="delete">DELETE</button>
+</div>
+
+<!-- Modal: edit item -->
+<div class="modal-overlay hidden centered" id="modal-edit">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="edit">Editar</div>
+    <div class="modal-body">
+      <div class="input-group">
+        <label class="input-label" data-i18n="itemName">Nombre</label>
+        <input class="input" type="text" id="edit-name" maxlength="80"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label" data-i18n="quantity">Cantidad</label>
+        <input class="input" type="text" id="edit-qty" maxlength="20"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label" data-i18n="category">Categoría</label>
+        <select class="input" id="edit-cat"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-edit').classList.add('hidden')" data-i18n="cancel">Cancelar</button>
+      <button class="btn btn-brand" onclick="saveEdit()" data-i18n="save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: copy to list -->
+<div class="modal-overlay hidden centered" id="modal-copy">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="copyTo">Copiar a lista</div>
+    <div class="modal-body">
+      <div class="input-group">
+        <label class="input-label" data-i18n="selectList">Selecciona una lista</label>
+        <select class="input" id="copy-list-select"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-copy').classList.add('hidden')" data-i18n="cancel">Cancelar</button>
+      <button class="btn btn-brand" onclick="confirmCopy()" data-i18n="copy">COPY</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: confirm delete item -->
+<div class="modal-overlay hidden centered" id="modal-del-item">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="delete">Eliminar</div>
+    <div class="modal-body"><p style="font-size:var(--fs-sm);color:var(--text-2)" data-i18n="confirmDelete">¿Eliminar este artículo?</p></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-del-item').classList.add('hidden')" data-i18n="cancel">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmDeleteItem()" data-i18n="delete">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: confirm clear all -->
+<div class="modal-overlay hidden centered" id="modal-clear-all">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="clearAll">Limpiar todo</div>
+    <div class="modal-body"><p style="font-size:var(--fs-sm);color:var(--text-2)" data-i18n="confirmClearAll">¿Seguro que quieres limpiar todo?</p></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-clear-all').classList.add('hidden')" data-i18n="cancel">Cancelar</button>
+      <button class="btn btn-danger" onclick="doClearAll()" data-i18n="yes">Sí, limpiar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: invite from list -->
+<div class="modal-overlay hidden centered" id="modal-invite">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="invite">Compartir</div>
+    <div class="modal-body">
+      <div class="input-group">
+        <label class="input-label" data-i18n="inviteEmail">Correo</label>
+        <input class="input" type="email" id="inv-email" data-i18n-placeholder="inviteEmail" placeholder="Correo a invitar"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-invite').classList.add('hidden')" data-i18n="cancel">Cancelar</button>
+      <button class="btn btn-brand" id="btn-inv" onclick="sendInvite()"><span data-i18n="sendInvite">Enviar</span></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="i18n.js"></script>
+<script src="supabase.js"></script>
+<script src="list.js?v=1"></script>
+</body>
+</html>

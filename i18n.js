@@ -1,0 +1,113 @@
+const i18n = {
+  es: {
+    appName: 'Listerfy',
+    tagline: 'Listas de compras compartidas',
+    login: 'Iniciar sesión', register: 'Registrarse',
+    email: 'Correo electrónico', password: 'Contraseña',
+    confirmPassword: 'Confirmar contraseña', displayName: 'Tu nombre',
+    loginBtn: 'Entrar', registerBtn: 'Crear cuenta',
+    loggingIn: 'Entrando...', registering: 'Creando cuenta...',
+    passwordMismatch: 'Las contraseñas no coinciden',
+    weakPassword: 'La contraseña debe tener al menos 6 caracteres',
+    myLists: 'Tus listas', newList: 'Nueva lista', listName: 'Nombre de la lista',
+    createList: 'Crear lista', creating: 'Creando...',
+    noLists: 'No tienes listas aún', noListsHint: 'Toca + para crear tu primera lista',
+    rename: 'Renombrar', share: 'Compartir', leaveList: 'Dejar de compartir', duplicate: 'Duplicar',
+    deleteList: 'Eliminar lista',
+    notifications: 'Notificaciones', noNotifications: 'Sin notificaciones',
+    invitationReceived: 'te invitó a', invitationAccepted: 'aceptó tu invitación a',
+    invitationRejected: 'rechazó tu invitación a',
+    accept: 'Aceptar', reject: 'Rechazar',
+    addItem: 'Agregar artículo', itemName: 'Escribe un artículo...', quantity: 'Cantidad',
+    category: 'Categoría', add: '+ Add', adding: 'Agregando...',
+    noItems: 'Lista vacía', noItemsHint: 'Toca + Add para agregar artículos',
+    checkedItems: 'Completados', hideChecked: 'Ocultar completados', showChecked: 'Ver completados',
+    clearCompleted: 'Limpiar completadas', clearAll: 'Limpiar todo',
+    confirmClearAll: '¿Seguro que quieres limpiar todo?', yes: 'Sí, limpiar', cancel: 'Cancelar',
+    confirmDelete: '¿Eliminar este artículo?', delete: 'Eliminar',
+    edit: 'EDIT', copy: 'COPY', copyTo: 'Copiar a lista', selectList: 'Selecciona una lista',
+    members: 'Miembros', invite: 'Compartir', inviteEmail: 'Correo a invitar',
+    sendInvite: 'Enviar invitación', sending: 'Enviando...', inviteSent: 'Invitación enviada',
+    alreadyMember: 'Ya es miembro de esta lista',
+    back: '←', profile: 'Profile', lists: 'Lists',
+    myLists: 'Your lists',
+    changeName: 'Cambiar nombre', changeEmail: 'Cambiar correo', changePassword: 'Cambiar contraseña',
+    darkMode: 'Modo oscuro', language: 'Idioma', fontSize: 'Tamaño de fuente',
+    fontSmall: 'Pequeño', fontNormal: 'Normal', fontLarge: 'Grande',
+    save: 'Guardar', saving: 'Guardando...', logout: 'Cerrar sesión',
+    newName: 'Nuevo nombre', newEmail: 'Nuevo correo', newPassword: 'Nueva contraseña',
+    currentPassword: 'Contraseña actual',
+    addCategory: 'Nueva categoría', categoryName: 'Nombre', categoryIcon: 'Emoji',
+    newItems: 'NEW ITEMS',
+    errorGeneral: 'Algo salió mal. Intenta de nuevo.',
+  },
+  en: {
+    appName: 'Listerfy',
+    tagline: 'Shared shopping lists',
+    login: 'Sign in', register: 'Sign up',
+    email: 'Email', password: 'Password',
+    confirmPassword: 'Confirm password', displayName: 'Your name',
+    loginBtn: 'Sign in', registerBtn: 'Create account',
+    loggingIn: 'Signing in...', registering: 'Creating account...',
+    passwordMismatch: 'Passwords do not match',
+    weakPassword: 'Password must be at least 6 characters',
+    myLists: 'Your lists', newList: 'New list', listName: 'List name',
+    createList: 'Create list', creating: 'Creating...',
+    noLists: "You don't have any lists", noListsHint: 'Tap + to create your first list',
+    rename: 'Rename', share: 'Share', leaveList: 'Leave list', duplicate: 'Duplicate',
+    deleteList: 'Delete list',
+    notifications: 'Notifications', noNotifications: 'No notifications',
+    invitationReceived: 'invited you to', invitationAccepted: 'accepted your invitation to',
+    invitationRejected: 'declined your invitation to',
+    accept: 'Accept', reject: 'Decline',
+    addItem: 'Add item', itemName: 'Type an item...', quantity: 'Quantity',
+    category: 'Category', add: '+ Add', adding: 'Adding...',
+    noItems: 'List is empty', noItemsHint: 'Tap + Add to add items',
+    checkedItems: 'Checked', hideChecked: 'Hide checked', showChecked: 'Show checked',
+    clearCompleted: 'Clear completed', clearAll: 'Clear all',
+    confirmClearAll: 'Are you sure you want to clear everything?', yes: 'Yes, clear', cancel: 'Cancel',
+    confirmDelete: 'Delete this item?', delete: 'Delete',
+    edit: 'EDIT', copy: 'COPY', copyTo: 'Copy to list', selectList: 'Select a list',
+    members: 'Members', invite: 'Share', inviteEmail: 'Email to invite',
+    sendInvite: 'Send invitation', sending: 'Sending...', inviteSent: 'Invitation sent',
+    alreadyMember: 'Already a member of this list',
+    back: '←', profile: 'Profile', lists: 'Lists',
+    myLists: 'Your lists',
+    changeName: 'Change name', changeEmail: 'Change email', changePassword: 'Change password',
+    darkMode: 'Dark mode', language: 'Language', fontSize: 'Font size',
+    fontSmall: 'Small', fontNormal: 'Normal', fontLarge: 'Large',
+    save: 'Save', saving: 'Saving...', logout: 'Sign out',
+    newName: 'New name', newEmail: 'New email', newPassword: 'New password',
+    currentPassword: 'Current password',
+    addCategory: 'New category', categoryName: 'Name', categoryIcon: 'Emoji',
+    newItems: 'NEW ITEMS',
+    errorGeneral: 'Something went wrong. Please try again.',
+  }
+};
+
+let currentLang = localStorage.getItem('lang') || 'es';
+
+function t(key) { return i18n[currentLang][key] || i18n.es[key] || key; }
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  document.documentElement.lang = lang;
+  applyTranslations();
+  document.dispatchEvent(new CustomEvent('langchange'));
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+}
+
+// Apply theme/font from localStorage
+function applyPrefs() {
+  const theme    = localStorage.getItem('theme') || 'dark';
+  const fontSize = localStorage.getItem('fontSize') || 'normal';
+  document.body.classList.toggle('light', theme === 'light');
+  document.body.classList.remove('font-small', 'font-normal', 'font-large');
+  document.body.classList.add('font-' + fontSize);
+}
+applyPrefs();
