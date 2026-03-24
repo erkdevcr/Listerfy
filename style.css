@@ -120,7 +120,7 @@ body {
 .btn-sm   { padding:6px 14px; font-size:var(--fs-xs); }
 .btn-lg   { padding:13px 26px; font-size:var(--fs-base); }
 .btn-full { width:100%; }
-.btn-icon { padding:8px; width:36px; height:36px; border-radius:var(--r-sm); flex-shrink:0; }
+.btn-icon { padding:8px; width:42px; height:42px; border-radius:var(--r-sm); flex-shrink:0; font-size:1.2rem; }
 
 /* List cards */
 .list-card {
@@ -133,7 +133,7 @@ body {
 .list-card-progress { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
 .progress-track { flex:1; height:6px; background:var(--bg-4); border-radius:var(--r-full); overflow:hidden; }
 .progress-fill { height:100%; background:var(--brand); border-radius:var(--r-full); transition:width .4s ease; min-width:8px; }
-.progress-dot { width:10px; height:10px; border-radius:var(--r-full); background:var(--brand); flex-shrink:0; }
+.progress-dot { display:none; }
 .progress-count { font-size:var(--fs-sm); color:var(--text-2); font-weight:600; white-space:nowrap; }
 .list-card-footer { display:flex; align-items:center; justify-content:space-between; }
 .badge-new-items {
@@ -178,7 +178,7 @@ body {
 .dropdown-menu.hidden { display:none; }
 .dropdown-item {
   display:flex; align-items:center; gap:10px; padding:12px 16px;
-  font-size:var(--fs-sm); font-weight:600; color:var(--text-1);
+  font-size:var(--fs-base); font-weight:600; color:var(--text-1);
   cursor:pointer; border:none; background:none; width:100%; text-align:left;
   font-family:var(--font); transition:background var(--transition);
 }
