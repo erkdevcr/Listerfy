@@ -93,11 +93,7 @@ window.renderLists = function(lists) {
 
     return '<div class="list-card" id="card-' + list.id + '"' +
       ' draggable="true"' +
-      ' style="transition:transform 0.18s ease,opacity 0.18s ease"' +
       ' ondragstart="dragStart(event, \'' + list.id + '\')"' +
-      ' ondragover="dragOver(event, \'' + list.id + '\')"' +
-      ' ondragleave="dragLeave(event, \'' + list.id + '\')"' +
-      ' ondrop="dragDrop(event, \'' + list.id + '\')"' +
       ' ondragend="dragEnd(event)"' +
       ' onclick="goToList(\'' + list.id + '\')">' +
       '<div class="list-card-name">' + esc(list.name) + '</div>' +
@@ -315,101 +311,88 @@ window.subscribeNotifs = function() {
 var _dragId = null;
 var _dragOverId = null;
 
-// ── Drag helpers ─────────────────────────────
+// ── Drag & Drop — container level ─────────────
+var _dragId = null;
+
 function removePlaceholder() {
   var ph = document.getElementById('drag-placeholder');
-  if (ph) ph.parentNode.removeChild(ph);
+  if (ph && ph.parentNode) ph.parentNode.removeChild(ph);
 }
 
-function getPlaceholder(height) {
-  removePlaceholder();
-  var ph = document.createElement('div');
-  ph.id = 'drag-placeholder';
-  ph.style.cssText = 'height:' + height + 'px;margin:0 12px 10px;border-radius:16px;background:rgba(52,176,128,0.15);border:2px dashed #34b080;transition:none;pointer-events:none;flex-shrink:0;';
-  return ph;
+function _containerDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  var dragEl = document.getElementById('card-' + _dragId);
+  if (!dragEl) return;
+
+  var ph = document.getElementById('drag-placeholder');
+  if (!ph) {
+    ph = document.createElement('div');
+    ph.id = 'drag-placeholder';
+    ph.style.cssText = 'height:' + dragEl.offsetHeight + 'px;margin:0 12px 10px;border-radius:16px;background:rgba(52,176,128,0.12);border:2px dashed #34b080;pointer-events:none;box-sizing:border-box;';
+  }
+
+  var cards = Array.from(document.querySelectorAll('.list-card')).filter(function(c) { return c !== dragEl; });
+  var insertBefore = null;
+  for (var i = 0; i < cards.length; i++) {
+    var rect = cards[i].getBoundingClientRect();
+    if (e.clientY < rect.top + rect.height / 2) { insertBefore = cards[i]; break; }
+  }
+
+  var parent = dragEl.parentNode;
+  if (insertBefore) {
+    if (ph.nextSibling !== insertBefore) parent.insertBefore(ph, insertBefore);
+  } else {
+    if (parent.lastChild !== ph) parent.appendChild(ph);
+  }
+}
+
+function _containerDrop(e) {
+  e.preventDefault();
+  var container = document.getElementById('page-content');
+  if (container) {
+    container.removeEventListener('dragover', _containerDragOver);
+    container.removeEventListener('drop', _containerDrop);
+  }
+  var ph = document.getElementById('drag-placeholder');
+  var dragEl = document.getElementById('card-' + _dragId);
+  if (ph && dragEl && ph.parentNode) {
+    ph.parentNode.insertBefore(dragEl, ph);
+    removePlaceholder();
+  } else {
+    removePlaceholder();
+  }
+  document.querySelectorAll('.list-card').forEach(function(c) { c.style.transform=''; c.style.opacity=''; });
+  Array.from(document.querySelectorAll('.list-card')).forEach(function(c, i) {
+    db.from('lists').update({ sort_order: i }).eq('id', c.id.replace('card-', ''));
+  });
+  _dragId = null;
 }
 
 window.dragStart = function(e, id) {
   _dragId = id;
   e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', id);
   setTimeout(function() {
     var el = document.getElementById('card-' + id);
-    if (el) {
-      el.style.opacity = '0.25';
-      el.style.transform = 'scale(0.97)';
-    }
+    if (el) { el.style.opacity = '0.25'; el.style.transform = 'scale(0.97)'; }
   }, 0);
-};
-
-window.dragOver = function(e, targetId) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  if (targetId === _dragId) return;
-  if (_dragOverId === targetId) return;
-  _dragOverId = targetId;
-
-  var dragEl = document.getElementById('card-' + _dragId);
-  var ph = getPlaceholder(dragEl ? dragEl.offsetHeight : 80);
-
-  var cards = Array.from(document.querySelectorAll('.list-card'));
-  var fromIdx = cards.findIndex(function(c) { return c.id === 'card-' + _dragId; });
-  var toIdx   = cards.findIndex(function(c) { return c.id === 'card-' + targetId; });
-  var targetEl = document.getElementById('card-' + targetId);
-
-  if (targetEl && targetEl.parentNode) {
-    if (fromIdx < toIdx) {
-      targetEl.parentNode.insertBefore(ph, targetEl.nextSibling);
-    } else {
-      targetEl.parentNode.insertBefore(ph, targetEl);
-    }
+  var container = document.getElementById('page-content');
+  if (container) {
+    container.addEventListener('dragover', _containerDragOver);
+    container.addEventListener('drop', _containerDrop);
   }
-};
-
-window.dragLeave = function(e, targetId) {
-  // Don't remove placeholder on leave — only on new dragover or drop/end
-};
-
-window.dragDrop = function(e, targetId) {
-  e.preventDefault();
-  removePlaceholder();
-
-  document.querySelectorAll('.list-card').forEach(function(c) {
-    c.style.transform = '';
-    c.style.opacity = '';
-  });
-  _dragOverId = null;
-  if (_dragId === targetId) { _dragId = null; return; }
-
-  var cards = Array.from(document.querySelectorAll('.list-card'));
-  var fromIdx = cards.findIndex(function(c) { return c.id === 'card-' + _dragId; });
-  var toIdx   = cards.findIndex(function(c) { return c.id === 'card-' + targetId; });
-  if (fromIdx === -1 || toIdx === -1) { _dragId = null; return; }
-
-  var parent = cards[0].parentNode;
-  var fromEl = cards[fromIdx];
-  var toEl   = cards[toIdx];
-  if (fromIdx < toIdx) {
-    parent.insertBefore(fromEl, toEl.nextSibling);
-  } else {
-    parent.insertBefore(fromEl, toEl);
-  }
-
-  var newCards = Array.from(document.querySelectorAll('.list-card'));
-  newCards.forEach(function(card, idx) {
-    var listId = card.id.replace('card-', '');
-    db.from('lists').update({ sort_order: idx }).eq('id', listId);
-  });
-  _dragId = null;
 };
 
 window.dragEnd = function(e) {
+  var container = document.getElementById('page-content');
+  if (container) {
+    container.removeEventListener('dragover', _containerDragOver);
+    container.removeEventListener('drop', _containerDrop);
+  }
   removePlaceholder();
-  document.querySelectorAll('.list-card').forEach(function(c) {
-    c.style.transform = '';
-    c.style.opacity = '';
-  });
+  document.querySelectorAll('.list-card').forEach(function(c) { c.style.transform=''; c.style.opacity=''; });
   _dragId = null;
-  _dragOverId = null;
 };
 
 window.initNotifBtn = function() {
