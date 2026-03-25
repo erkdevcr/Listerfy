@@ -47,7 +47,7 @@ body.font-small  { --fs-base:13px; --fs-sm:11px; --fs-xs:10px; --fs-lg:15px; --f
 body.font-normal { --fs-base:15px; --fs-sm:13px; --fs-xs:11px; --fs-lg:17px; --fs-xl:20px; --fs-2xl:24px; }
 body.font-large  { --fs-base:17px; --fs-sm:15px; --fs-xs:12px; --fs-lg:19px; --fs-xl:23px; --fs-2xl:28px; }
 
-*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
 html { scroll-behavior:smooth; }
 body {
   font-family: var(--font);
@@ -125,6 +125,7 @@ body {
 /* List cards */
 .list-card {
   background:#303030; border-radius:var(--r-lg); padding:16px;
+  -webkit-user-select:none; user-select:none;
   margin:0 12px 15px; position:relative; cursor:pointer;
   transition:background var(--transition), margin 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease; border:1px solid var(--border);
 }
