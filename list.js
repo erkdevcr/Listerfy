@@ -7,6 +7,7 @@ window.members = [];
 window.items = [];
 window.listData = null;
 window.selectedItemId = null;
+window.selectedItemIds = [];
 window.longPressTimer = null;
 
 var AVATAR_COLORS = ['#16a34a','#0284c7','#7c3aed','#db2777','#ea580c','#0891b2','#65a30d','#d97706'];
@@ -128,8 +129,8 @@ window.renderItem = function(item) {
   return '<div class="item-row" id="row-' + item.id + '"' +
     ' ontouchstart="startLongPress(\'' + item.id + '\',event)" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"' +
     ' onmousedown="startLongPress(\'' + item.id + '\',event)" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()">' +
-    '<div class="item-circle ' + circleClass + '" onclick="cycleState(\'' + item.id + '\')"></div>' +
-    '<span class="item-name" style="' + nameStyle + '" onclick="cycleState(\'' + item.id + '\')">' + esc(item.name) +
+    '<div class="item-circle ' + circleClass + '" onclick="window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')" ></div>' +
+    '<span class="item-name" style="' + nameStyle + '" onclick="window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')">' + esc(item.name) +
       (item.quantity ? ' <span style="color:var(--text-3);font-size:var(--fs-xs)">' + esc(item.quantity) + '</span>' : '') +
     '</span>' +
     '<div class="item-cat-icon">' + catIcon + '</div>' +
@@ -199,20 +200,57 @@ window.startLongPress = function(id) { window.longPressTimer = setTimeout(functi
 window.cancelLongPress = function() { clearTimeout(window.longPressTimer); };
 
 window.selectItem = function(id) {
-  window.selectedItemId = id;
-  document.getElementById('action-bar').classList.remove('hidden');
-  document.getElementById('add-pill').classList.add('hidden');
-  document.querySelectorAll('.item-row').forEach(function(r) { r.classList.remove('selected'); });
-  var row = document.getElementById('row-' + id); if (row) row.classList.add('selected');
-  var b = document.getElementById('back-btn'); b.textContent = '✕'; b.onclick = window.clearSelection;
+  // First long press — enter selection mode
+  if (window.selectedItemIds.length === 0) {
+    document.getElementById('action-bar').classList.remove('hidden');
+    document.getElementById('add-pill').classList.add('hidden');
+    document.getElementById('btn-action-edit').style.display = 'block';
+    document.getElementById('action-bar-info').textContent = '';
+    var b = document.getElementById('back-btn'); b.textContent = '✕'; b.onclick = window.clearSelection;
+    // Make all item rows tappable to toggle selection
+    window._multiSelectMode = true;
+  }
+  // Toggle selection
+  var idx = window.selectedItemIds.indexOf(id);
+  if (idx === -1) {
+    window.selectedItemIds.push(id);
+    var row = document.getElementById('row-' + id);
+    if (row) row.classList.add('selected');
+  } else {
+    window.selectedItemIds.splice(idx, 1);
+    var row = document.getElementById('row-' + id);
+    if (row) row.classList.remove('selected');
+  }
+  window.selectedItemId = window.selectedItemIds[0] || null;
+  // Update info label and edit button
+  var count = window.selectedItemIds.length;
+  var info = document.getElementById('action-bar-info');
+  var editBtn = document.getElementById('btn-action-edit');
+  if (count === 0) {
+    window.clearSelection(); return;
+  } else if (count === 1) {
+    info.textContent = '1 seleccionado';
+    editBtn.style.display = 'block';
+  } else {
+    info.textContent = count + ' seleccionados';
+    editBtn.style.display = 'none';
+  }
 };
 
 window.clearSelection = function() {
   window.selectedItemId = null;
+  window.selectedItemIds = [];
+  window._multiSelectMode = false;
   document.getElementById('action-bar').classList.add('hidden');
   document.getElementById('add-pill').classList.remove('hidden');
   document.querySelectorAll('.item-row').forEach(function(r) { r.classList.remove('selected'); });
   var b = document.getElementById('back-btn'); b.textContent = '←'; b.onclick = function() { location.href='app.html'; };
+};
+
+// Tap item when in multi-select mode to toggle selection
+// handleItemClick no longer needed - handled inline in renderItem
+window.handleItemClick = function(id) {
+  if (window._multiSelectMode) window.selectItem(id);
 };
 
 window._lastEditId = null;
@@ -247,6 +285,25 @@ window.openCopyModal = function() {
 };
 window.confirmCopy = function() {
   var targetId = document.getElementById('copy-list-select').value; if (!targetId) return;
+  // Multi-copy
+  if (window._pendingCopyIds && window._pendingCopyIds.length > 1) {
+    var ids = window._pendingCopyIds;
+    window._pendingCopyIds = null;
+    var chain = Promise.resolve();
+    ids.forEach(function(id) {
+      var item = window.items.find(function(i){ return i.id === id; });
+      if (!item) return;
+      chain = chain.then(function() {
+        return db.from('items').insert({ list_id: targetId, name: item.name, quantity: item.quantity, category_id: item.category_id, added_by: window.currentUser.id, item_state: 'unchecked' });
+      });
+    });
+    chain.then(function() {
+      document.getElementById('modal-copy').classList.add('hidden');
+      showToast('✓', 'success');
+    });
+    return;
+  }
+  window._pendingCopyIds = null;
   var item = window.items.find(function(i){ return i.id === window._lastEditId; }); if (!item) return;
   db.from('items').insert({ list_id: targetId, name: item.name, quantity: item.quantity, category_id: item.category_id, added_by: window.currentUser.id, item_state: 'unchecked' }).then(function() {
     document.getElementById('modal-copy').classList.add('hidden');
@@ -255,6 +312,53 @@ window.confirmCopy = function() {
 };
 
 window.deleteSelected = function() { window._lastEditId = window.selectedItemId; document.getElementById('modal-del-item').classList.remove('hidden'); window.clearSelection(); };
+
+window.deleteSelectedItems = function() {
+  if (window.selectedItemIds.length === 0) return;
+  if (window.selectedItemIds.length === 1) {
+    window._lastEditId = window.selectedItemIds[0];
+    window.clearSelection();
+    document.getElementById('modal-del-item').classList.remove('hidden');
+    return;
+  }
+  var ids = window.selectedItemIds.slice();
+  window.clearSelection();
+  window._localChange = true;
+  var chain = Promise.resolve();
+  ids.forEach(function(id) {
+    chain = chain.then(function() {
+      return db.from('items').delete().eq('id', id);
+    });
+  });
+  chain.then(function() { window._localChange = false; });
+};
+
+window.copySelectedItems = function() {
+  if (window.selectedItemIds.length === 0) return;
+  if (window.selectedItemIds.length === 1) {
+    window._lastEditId = window.selectedItemIds[0];
+    window.clearSelection();
+    window.openCopyModal();
+    return;
+  }
+  // Multi-select copy: open copy modal and copy all selected
+  var ids = window.selectedItemIds.slice();
+  window._pendingCopyIds = ids;
+  window.clearSelection();
+  // Reuse copy modal
+  db.from('list_members').select('list_id').eq('user_id', window.currentUser.id).then(function(res) {
+    var listIds = (res.data||[]).map(function(m){ return m.list_id; }).filter(function(id){ return id !== LIST_ID; });
+    var sel = document.getElementById('copy-list-select');
+    if (!listIds.length) {
+      sel.innerHTML = '<option>' + (currentLang==='es'?'No hay otras listas':'No other lists') + '</option>';
+    } else {
+      db.from('lists').select('id, name').in('id', listIds).then(function(r) {
+        sel.innerHTML = (r.data||[]).map(function(l){ return '<option value="' + l.id + '">' + l.name + '</option>'; }).join('');
+      });
+    }
+    document.getElementById('modal-copy').classList.remove('hidden');
+  });
+};
 window.confirmDeleteItem = function() { db.from('items').delete().eq('id', window._lastEditId).then(function() { document.getElementById('modal-del-item').classList.add('hidden'); }); };
 
 window.clearCompleted = function() {
