@@ -43,9 +43,11 @@ body.light {
   --shadow-sm: 0 1px 3px rgba(0,0,0,.1); --shadow-md: 0 4px 12px rgba(0,0,0,.12); --shadow-lg: 0 8px 24px rgba(0,0,0,.15);
 }
 
+body.font-xs     { --fs-base:11px; --fs-sm:9px;  --fs-xs:8px;  --fs-lg:13px; --fs-xl:16px; --fs-2xl:19px; }
 body.font-small  { --fs-base:13px; --fs-sm:11px; --fs-xs:10px; --fs-lg:15px; --fs-xl:18px; --fs-2xl:21px; }
 body.font-normal { --fs-base:15px; --fs-sm:13px; --fs-xs:11px; --fs-lg:17px; --fs-xl:20px; --fs-2xl:24px; }
 body.font-large  { --fs-base:17px; --fs-sm:15px; --fs-xs:12px; --fs-lg:19px; --fs-xl:23px; --fs-2xl:28px; }
+body.font-xl     { --fs-base:20px; --fs-sm:17px; --fs-xs:14px; --fs-lg:22px; --fs-xl:26px; --fs-2xl:32px; }
 
 *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
 html { scroll-behavior:smooth; }

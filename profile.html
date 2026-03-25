@@ -140,9 +140,11 @@
         <div class="profile-row" style="cursor:default;flex-direction:column;align-items:flex-start;gap:10px">
           <span class="profile-row-label" data-i18n="fontSize">${t('fontSize')}</span>
           <div class="font-size-opts w-full">
+            <button class="font-size-opt ${fs==='xs'?'active':''}" onclick="setFontSize('xs')" data-i18n="fontXS">${t('fontXS')}</button>
             <button class="font-size-opt ${fs==='small'?'active':''}" onclick="setFontSize('small')" data-i18n="fontSmall">${t('fontSmall')}</button>
             <button class="font-size-opt ${fs==='normal'?'active':''}" onclick="setFontSize('normal')" data-i18n="fontNormal">${t('fontNormal')}</button>
             <button class="font-size-opt ${fs==='large'?'active':''}" onclick="setFontSize('large')" data-i18n="fontLarge">${t('fontLarge')}</button>
+            <button class="font-size-opt ${fs==='xl'?'active':''}" onclick="setFontSize('xl')" data-i18n="fontXL">${t('fontXL')}</button>
           </div>
         </div>
       </div>
@@ -171,7 +173,7 @@
   // ── Font size ──
   function setFontSize(size) {
     localStorage.setItem('fontSize', size);
-    document.body.classList.remove('font-small','font-normal','font-large');
+    document.body.classList.remove('font-xs','font-small','font-normal','font-large','font-xl');
     document.body.classList.add('font-' + size);
     renderProfile();
   }
