@@ -315,16 +315,28 @@ window.subscribeNotifs = function() {
 var _dragId = null;
 var _dragOverId = null;
 
+// ── Drag helpers ─────────────────────────────
+function removePlaceholder() {
+  var ph = document.getElementById('drag-placeholder');
+  if (ph) ph.parentNode.removeChild(ph);
+}
+
+function getPlaceholder(height) {
+  removePlaceholder();
+  var ph = document.createElement('div');
+  ph.id = 'drag-placeholder';
+  ph.style.cssText = 'height:' + height + 'px;margin:0 12px 10px;border-radius:16px;background:rgba(52,176,128,0.15);border:2px dashed #34b080;transition:none;pointer-events:none;flex-shrink:0;';
+  return ph;
+}
+
 window.dragStart = function(e, id) {
   _dragId = id;
   e.dataTransfer.effectAllowed = 'move';
   setTimeout(function() {
     var el = document.getElementById('card-' + id);
     if (el) {
-      el.style.opacity = '0.3';
-      el.style.transform = 'scale(0.98) rotate(1deg)';
-      el.style.boxShadow = '0 12px 32px rgba(0,0,0,0.5)';
-      el.style.zIndex = '999';
+      el.style.opacity = '0.25';
+      el.style.transform = 'scale(0.97)';
     }
   }, 0);
 };
@@ -334,53 +346,36 @@ window.dragOver = function(e, targetId) {
   e.dataTransfer.dropEffect = 'move';
   if (targetId === _dragId) return;
   if (_dragOverId === targetId) return;
-
-  // Reset ALL cards to no margin first
-  document.querySelectorAll('.list-card').forEach(function(c) {
-    c.style.marginTop = '';
-    c.style.marginBottom = '';
-  });
-
   _dragOverId = targetId;
 
-  // Calculate dragged card height to open same-sized gap
   var dragEl = document.getElementById('card-' + _dragId);
-  var dragH = dragEl ? (dragEl.offsetHeight + 10) + 'px' : '90px';
+  var ph = getPlaceholder(dragEl ? dragEl.offsetHeight : 80);
 
   var cards = Array.from(document.querySelectorAll('.list-card'));
   var fromIdx = cards.findIndex(function(c) { return c.id === 'card-' + _dragId; });
   var toIdx   = cards.findIndex(function(c) { return c.id === 'card-' + targetId; });
   var targetEl = document.getElementById('card-' + targetId);
 
-  if (targetEl) {
-    // Open gap above or below target depending on drag direction
+  if (targetEl && targetEl.parentNode) {
     if (fromIdx < toIdx) {
-      // Dragging DOWN — open gap below target
-      targetEl.style.marginBottom = dragH;
+      targetEl.parentNode.insertBefore(ph, targetEl.nextSibling);
     } else {
-      // Dragging UP — open gap above target
-      targetEl.style.marginTop = dragH;
+      targetEl.parentNode.insertBefore(ph, targetEl);
     }
   }
 };
 
 window.dragLeave = function(e, targetId) {
-  if (e.relatedTarget && e.currentTarget.contains(e.relatedTarget)) return;
-  var el = document.getElementById('card-' + targetId);
-  if (el) { el.style.marginTop = ''; el.style.marginBottom = ''; }
-  if (_dragOverId === targetId) _dragOverId = null;
+  // Don't remove placeholder on leave — only on new dragover or drop/end
 };
 
 window.dragDrop = function(e, targetId) {
   e.preventDefault();
-  // Reset all card styles
+  removePlaceholder();
+
   document.querySelectorAll('.list-card').forEach(function(c) {
     c.style.transform = '';
     c.style.opacity = '';
-    c.style.boxShadow = '';
-    c.style.zIndex = '';
-    c.style.marginTop = '';
-    c.style.marginBottom = '';
   });
   _dragOverId = null;
   if (_dragId === targetId) { _dragId = null; return; }
@@ -408,13 +403,10 @@ window.dragDrop = function(e, targetId) {
 };
 
 window.dragEnd = function(e) {
+  removePlaceholder();
   document.querySelectorAll('.list-card').forEach(function(c) {
     c.style.transform = '';
     c.style.opacity = '';
-    c.style.boxShadow = '';
-    c.style.zIndex = '';
-    c.style.marginTop = '';
-    c.style.marginBottom = '';
   });
   _dragId = null;
   _dragOverId = null;
