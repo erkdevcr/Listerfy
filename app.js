@@ -93,8 +93,10 @@ window.renderLists = function(lists) {
 
     return '<div class="list-card" id="card-' + list.id + '"' +
       ' draggable="true"' +
+      ' style="transition:transform 0.18s ease,opacity 0.18s ease"' +
       ' ondragstart="dragStart(event, \'' + list.id + '\')"' +
-      ' ondragover="dragOver(event)"' +
+      ' ondragover="dragOver(event, \'' + list.id + '\')"' +
+      ' ondragleave="dragLeave(event, \'' + list.id + '\')"' +
       ' ondrop="dragDrop(event, \'' + list.id + '\')"' +
       ' ondragend="dragEnd(event)"' +
       ' onclick="goToList(\'' + list.id + '\')">' +
@@ -311,31 +313,76 @@ window.subscribeNotifs = function() {
 
 // ── Drag & Drop para reordenar listas ────────
 var _dragId = null;
+var _dragOverId = null;
 
 window.dragStart = function(e, id) {
   _dragId = id;
   e.dataTransfer.effectAllowed = 'move';
   setTimeout(function() {
     var el = document.getElementById('card-' + id);
-    if (el) el.style.opacity = '0.4';
+    if (el) {
+      el.style.opacity = '0.35';
+      el.style.transform = 'scale(0.97)';
+    }
   }, 0);
 };
 
-window.dragOver = function(e) {
+window.dragOver = function(e, targetId) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
+  if (_dragOverId === targetId || targetId === _dragId) return;
+
+  // Reset previous target
+  if (_dragOverId) {
+    var prev = document.getElementById('card-' + _dragOverId);
+    if (prev) { prev.style.transform = ''; prev.style.marginTop = ''; prev.style.marginBottom = ''; prev.style.transition = ''; }
+  }
+  _dragOverId = targetId;
+
+  // Find drag direction and push target card
+  var cards = Array.from(document.querySelectorAll('.list-card'));
+  var fromIdx = cards.findIndex(function(c) { return c.id === 'card-' + _dragId; });
+  var toIdx   = cards.findIndex(function(c) { return c.id === 'card-' + targetId; });
+  var targetEl = document.getElementById('card-' + targetId);
+  if (targetEl) {
+    targetEl.style.transition = 'transform 0.18s ease, margin 0.18s ease';
+    if (fromIdx < toIdx) {
+      // Dragging down — push target up
+      targetEl.style.transform = 'translateY(-12px)';
+    } else {
+      // Dragging up — push target down
+      targetEl.style.transform = 'translateY(12px)';
+    }
+  }
+};
+
+window.dragLeave = function(e, targetId) {
+  // Only reset if leaving to outside the card
+  if (e.relatedTarget && e.currentTarget.contains(e.relatedTarget)) return;
+  var el = document.getElementById('card-' + targetId);
+  if (el) {
+    el.style.transform = '';
+    el.style.transition = '';
+  }
+  if (_dragOverId === targetId) _dragOverId = null;
 };
 
 window.dragDrop = function(e, targetId) {
   e.preventDefault();
-  if (_dragId === targetId) return;
-  // Reorder in DOM and update sort_order
+  // Reset all card styles
+  document.querySelectorAll('.list-card').forEach(function(c) {
+    c.style.transform = '';
+    c.style.opacity = '';
+    c.style.transition = '';
+  });
+  _dragOverId = null;
+  if (_dragId === targetId) { _dragId = null; return; }
+
   var cards = Array.from(document.querySelectorAll('.list-card'));
   var fromIdx = cards.findIndex(function(c) { return c.id === 'card-' + _dragId; });
   var toIdx   = cards.findIndex(function(c) { return c.id === 'card-' + targetId; });
-  if (fromIdx === -1 || toIdx === -1) return;
+  if (fromIdx === -1 || toIdx === -1) { _dragId = null; return; }
 
-  // Reorder visually
   var parent = cards[0].parentNode;
   var fromEl = cards[fromIdx];
   var toEl   = cards[toIdx];
@@ -351,12 +398,18 @@ window.dragDrop = function(e, targetId) {
     var listId = card.id.replace('card-', '');
     db.from('lists').update({ sort_order: idx }).eq('id', listId);
   });
+  _dragId = null;
 };
 
 window.dragEnd = function(e) {
-  var el = document.getElementById('card-' + _dragId);
-  if (el) el.style.opacity = '1';
+  // Reset all cards in case drop didn't fire
+  document.querySelectorAll('.list-card').forEach(function(c) {
+    c.style.transform = '';
+    c.style.opacity = '';
+    c.style.transition = '';
+  });
   _dragId = null;
+  _dragOverId = null;
 };
 
 window.initNotifBtn = function() {
