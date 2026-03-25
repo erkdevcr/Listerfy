@@ -83,7 +83,10 @@ window.renderEmpty = function() {
 window.renderLists = function(lists) {
   var html = lists.map(function(list) {
     var pct = list.total > 0 ? Math.round((list.checked / list.total) * 100) : 0;
-    var avatars = list.members.slice(0,5).map(function(m) {
+    var currentUid = window.currentUser && window.currentUser.id;
+    var avatars = list.members.filter(function(m) {
+      return m.user_id !== currentUid;
+    }).slice(0,5).map(function(m) {
       var name = (m.profiles && m.profiles.display_name) || '?';
       return '<div class="avatar" style="background:' + avatarColor(name) + '">' + avatarInitials(name) + '</div>';
     }).join('');
