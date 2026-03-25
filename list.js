@@ -261,7 +261,7 @@ window.clearSelection = function() {
   document.getElementById('action-bar').classList.add('hidden');
   document.getElementById('add-pill').classList.remove('hidden');
   document.querySelectorAll('.item-row').forEach(function(r) { r.classList.remove('selected'); });
-  var b = document.getElementById('back-btn'); b.textContent = '←'; b.onclick = function() { location.href='app.html'; };
+  var b = document.getElementById('back-btn'); b.innerHTML = '<svg viewBox="0 0 492 492" xmlns="http://www.w3.org/2000/svg" fill="#436e60" width="26" height="26"><path d="M7.86,265.12l177.68,177.68c5.07,5.07,11.83,7.86,19.04,7.86s13.97-2.79,19.04-7.86l16.13-16.14c5.07-5.06,7.86-11.83,7.86-19.04s-2.79-14.2-7.86-19.26l-103.66-103.88h329.32c14.85,0,26.58-11.62,26.58-26.48v-22.81c0-14.85-11.73-27.65-26.58-27.65H134.93l104.83-104.46c5.07-5.07,7.86-11.65,7.86-18.86s-2.79-13.88-7.86-18.95l-16.13-16.08c-5.07-5.07-11.83-7.84-19.04-7.84s-13.97,2.8-19.04,7.87L7.86,226.9C2.78,231.99-.02,238.78,0,246c-.02,7.24,2.78,14.04,7.86,19.12Z"/></svg>'; b.onclick = function() { location.href='app.html'; };
 };
 
 // Tap item when in multi-select mode to toggle selection
