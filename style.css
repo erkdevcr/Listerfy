@@ -30,6 +30,7 @@
   --shadow-md:    0 4px 12px rgba(0,0,0,.5);
   --shadow-lg:    0 8px 24px rgba(0,0,0,.6);
   --circle-size: 26px; --row-pad: 13px;
+  --card-bg: #303030;
   --r-sm:   8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px; --r-full: 9999px;
   --fs-base: 15px; --fs-sm: 13px; --fs-xs: 11px; --fs-lg: 17px; --fs-xl: 20px; --fs-2xl: 24px;
   --transition: 0.15s ease;
@@ -41,6 +42,7 @@ body.light {
   --border: #e0e0e0; --border-2: #d0d0d0;
   --text-1: #111111; --text-2: #555555; --text-3: #999999;
   --completed-text: #444444;  /* darker for light bg */
+  --card-bg: #ffffff;
   --shadow-sm: 0 1px 3px rgba(0,0,0,.1); --shadow-md: 0 4px 12px rgba(0,0,0,.12); --shadow-lg: 0 8px 24px rgba(0,0,0,.15);
 }
 
@@ -127,7 +129,7 @@ body {
 
 /* List cards */
 .list-card {
-  background:#303030; border-radius:var(--r-lg); padding:16px;
+  background:var(--card-bg); border-radius:var(--r-lg); padding:16px;
   -webkit-user-select:none; user-select:none;
   margin:0 12px 15px; position:relative; cursor:pointer;
   transition:background var(--transition), margin 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease; border:1px solid var(--border);
@@ -330,7 +332,7 @@ select.input {
 .modal-footer .btn { flex:1; }
 
 /* Profile */
-.profile-section { background:var(--bg-2); border-radius:var(--r-lg); margin:12px; overflow:hidden; border:1px solid var(--border); }
+.profile-section { background:var(--card-bg); border-radius:var(--r-lg); margin:12px; overflow:hidden; border:1px solid var(--border); }
 .profile-section-title { font-size:var(--fs-xs); font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em; padding:12px 16px 6px; }
 .profile-row {
   display:flex; align-items:center; justify-content:space-between; gap:12px;
