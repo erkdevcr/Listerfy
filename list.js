@@ -21,10 +21,13 @@ document.addEventListener('click', function(e) {
   var pill  = document.getElementById('add-pill');
   if (!panel || panel.classList.contains('hidden')) return;
   if (!panel.contains(e.target) && !pill.contains(e.target)) {
+    // Stop propagation so the click doesn't reach item-rows below
+    e.stopPropagation();
+    e.preventDefault();
     panel.classList.add('hidden');
     pill.classList.remove('hidden');
   }
-});
+}, true); // capture phase — fires before item onclick handlers
 
 // Auto-start
 setTimeout(function() {
