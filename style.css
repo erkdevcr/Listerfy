@@ -253,15 +253,16 @@ body {
 
 /* Add pill */
 .add-pill {
-  position:fixed; bottom:76px;
+  position:fixed; bottom:120px;
   right:max(16px, calc(50vw - 480px/2 + 16px));
   display:flex; z-index:60; border-radius:var(--r-full); overflow:hidden;
   box-shadow:0 4px 16px rgba(91,156,246,.45);
 }
 .add-pill-main {
   background:var(--brand); color:#fff; border:none;
-  padding:14px 20px; font-family:var(--font); font-size:var(--fs-base); font-weight:700;
+  padding:14px 24px; font-family:var(--font); font-size:var(--fs-base); font-weight:700;
   cursor:pointer; display:flex; align-items:center; gap:6px;
+  border-radius:var(--r-full);
   transition:background var(--transition);
 }
 .add-pill-main:hover { background:var(--brand-dark); }
