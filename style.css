@@ -124,7 +124,7 @@ body {
 
 /* List cards */
 .list-card {
-  background:var(--bg-2); border-radius:var(--r-lg); padding:16px;
+  background:#303030; border-radius:var(--r-lg); padding:16px;
   margin:0 12px 10px; position:relative; cursor:pointer;
   transition:background var(--transition); border:1px solid var(--border);
 }
