@@ -67,7 +67,7 @@ window.renderTopbar = function() {
     return '<div class="avatar avatar-sm" style="background:' + avatarColor(name) + '">' + avatarInitials(name) + '</div>';
   }).join('');
   document.getElementById('topbar-actions').innerHTML =
-    '<div class="avatar-stack">' + avatars + '</div>' +
+    '<div class="avatar-stack" onclick="openMembersModal()" style="cursor:pointer">' + avatars + '</div>' +
     '<div class="dropdown-wrap" style="position:relative">' +
       '<button class="btn btn-ghost btn-icon" onclick="toggleListMenu()">⋮</button>' +
       '<div class="dropdown-menu hidden" id="list-menu" style="right:0;top:40px">' +
@@ -431,6 +431,32 @@ window.sendInvite = function() {
 
 window.confirmDeleteList = function() { if (!confirm(currentLang==='es'?'¿Eliminar esta lista?':'Delete this list?')) return; db.from('lists').delete().eq('id', LIST_ID).then(function() { location.href='app.html'; }); };
 window.confirmLeaveList = function() { if (!confirm(currentLang==='es'?'¿Dejar esta lista?':'Leave this list?')) return; db.from('list_members').delete().eq('list_id', LIST_ID).eq('user_id', window.currentUser.id).then(function() { location.href='app.html'; }); };
+
+window.openMembersModal = function() {
+  var modal = document.getElementById('modal-members');
+  var list  = document.getElementById('modal-members-list');
+  if (!modal || !list) return;
+
+  var html = window.members.map(function(m) {
+    var name  = (m.profiles && m.profiles.display_name) || '?';
+    var email = (m.profiles && m.profiles.email) || '';
+    var isMe  = m.user_id === window.currentUser.id;
+    var COLORS = ['#16a34a','#0284c7','#7c3aed','#db2777','#ea580c','#0891b2','#65a30d','#d97706'];
+    var h = 0; for (var i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h<<5)-h);
+    var color = COLORS[Math.abs(h) % COLORS.length];
+    var initials = name.trim().split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)||'?';
+    return '<div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border)">' +
+      '<div class="avatar" style="background:' + color + ';flex-shrink:0">' + initials + '</div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-weight:700;color:var(--text-1);font-size:var(--fs-base)">' + name + (isMe ? ' <span style="font-size:var(--fs-xs);color:var(--brand);font-weight:600">(tú)</span>' : '') + '</div>' +
+        '<div style="font-size:var(--fs-sm);color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + email + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  list.innerHTML = html || '<p style="padding:20px;text-align:center;color:var(--text-3)">Sin participantes</p>';
+  modal.classList.remove('hidden');
+};
 
 window.renderCatOptions = function(selectId, selectedId) {
   var sel = document.getElementById(selectId); if (!sel) return;

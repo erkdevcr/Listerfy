@@ -156,6 +156,18 @@
 </div>
 
 <div id="toast-container"></div>
+
+<!-- Modal: participantes -->
+<div class="modal-overlay hidden centered" id="modal-members">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="members">Participantes</div>
+    <div class="modal-body" id="modal-members-list" style="padding:0"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-full" onclick="document.getElementById('modal-members').classList.add('hidden')" data-i18n="close">Cerrar</button>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="i18n.js"></script>
 <script src="supabase.js"></script>
