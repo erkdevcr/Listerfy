@@ -325,18 +325,28 @@ function _containerDragOver(e) {
   var dragEl = document.getElementById('card-' + _dragId);
   if (!dragEl) return;
 
+  var allCards = Array.from(document.querySelectorAll('.list-card'));
+  var dragIdx = allCards.findIndex(function(c) { return c.id === 'card-' + _dragId; });
+
+  var cards = allCards.filter(function(c) { return c !== dragEl; });
+  var insertBefore = null;
+  for (var i = 0; i < cards.length; i++) {
+    var rect = cards[i].getBoundingClientRect();
+    if (e.clientY < rect.top + rect.height / 2) { insertBefore = cards[i]; break; }
+  }
+
+  // Skip if placeholder would be immediately adjacent (same effective position)
+  var insertIdx = insertBefore ? allCards.indexOf(insertBefore) : allCards.length;
+  if (insertIdx === dragIdx || insertIdx === dragIdx + 1) {
+    removePlaceholder();
+    return;
+  }
+
   var ph = document.getElementById('drag-placeholder');
   if (!ph) {
     ph = document.createElement('div');
     ph.id = 'drag-placeholder';
     ph.style.cssText = 'height:' + dragEl.offsetHeight + 'px;margin:0 12px 10px;border-radius:16px;background:rgba(52,176,128,0.12);border:2px dashed #34b080;pointer-events:none;box-sizing:border-box;';
-  }
-
-  var cards = Array.from(document.querySelectorAll('.list-card')).filter(function(c) { return c !== dragEl; });
-  var insertBefore = null;
-  for (var i = 0; i < cards.length; i++) {
-    var rect = cards[i].getBoundingClientRect();
-    if (e.clientY < rect.top + rect.height / 2) { insertBefore = cards[i]; break; }
   }
 
   var parent = dragEl.parentNode;
