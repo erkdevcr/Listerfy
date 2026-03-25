@@ -46,7 +46,7 @@ window.loadLists = function() {
     var memberships = res.data;
     if (!memberships || !memberships.length) { renderEmpty(); return; }
     var ids = memberships.map(function(m){ return m.list_id; });
-    db.from('lists').select('*').in('id', ids).order('updated_at', { ascending: false }).then(function(res2) {
+    db.from('lists').select('*').in('id', ids).order('sort_order', { ascending: true }).then(function(res2) {
       var lists = res2.data;
       if (!lists || !lists.length) { renderEmpty(); return; }
       var pending = lists.length;
@@ -91,7 +91,13 @@ window.renderLists = function(lists) {
       return '<div class="avatar" style="background:' + avatarColor(name) + '">' + avatarInitials(name) + '</div>';
     }).join('');
 
-    return '<div class="list-card" onclick="goToList(\'' + list.id + '\')">' +
+    return '<div class="list-card" id="card-' + list.id + '"' +
+      ' draggable="true"' +
+      ' ondragstart="dragStart(event, \'' + list.id + '\')"' +
+      ' ondragover="dragOver(event)"' +
+      ' ondrop="dragDrop(event, \'' + list.id + '\')"' +
+      ' ondragend="dragEnd(event)"' +
+      ' onclick="goToList(\'' + list.id + '\')">' +
       '<div class="list-card-name">' + esc(list.name) + '</div>' +
       '<div class="list-card-progress">' +
         '<div class="progress-dot"></div>' +
@@ -302,6 +308,56 @@ window.subscribeNotifs = function() {
       function() { loadNotifications(); })
     .subscribe();
 }
+
+// ── Drag & Drop para reordenar listas ────────
+var _dragId = null;
+
+window.dragStart = function(e, id) {
+  _dragId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(function() {
+    var el = document.getElementById('card-' + id);
+    if (el) el.style.opacity = '0.4';
+  }, 0);
+};
+
+window.dragOver = function(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+};
+
+window.dragDrop = function(e, targetId) {
+  e.preventDefault();
+  if (_dragId === targetId) return;
+  // Reorder in DOM and update sort_order
+  var cards = Array.from(document.querySelectorAll('.list-card'));
+  var fromIdx = cards.findIndex(function(c) { return c.id === 'card-' + _dragId; });
+  var toIdx   = cards.findIndex(function(c) { return c.id === 'card-' + targetId; });
+  if (fromIdx === -1 || toIdx === -1) return;
+
+  // Reorder visually
+  var parent = cards[0].parentNode;
+  var fromEl = cards[fromIdx];
+  var toEl   = cards[toIdx];
+  if (fromIdx < toIdx) {
+    parent.insertBefore(fromEl, toEl.nextSibling);
+  } else {
+    parent.insertBefore(fromEl, toEl);
+  }
+
+  // Save new order to DB
+  var newCards = Array.from(document.querySelectorAll('.list-card'));
+  newCards.forEach(function(card, idx) {
+    var listId = card.id.replace('card-', '');
+    db.from('lists').update({ sort_order: idx }).eq('id', listId);
+  });
+};
+
+window.dragEnd = function(e) {
+  var el = document.getElementById('card-' + _dragId);
+  if (el) el.style.opacity = '1';
+  _dragId = null;
+};
 
 window.initNotifBtn = function() {
   var btn = document.getElementById('notif-btn');

@@ -50,6 +50,7 @@
            data-i18n-placeholder="itemName" placeholder="Escribe un artículo..."
            onkeydown="if(event.key==='Enter') addItem()"/>
     <button class="btn btn-brand" onclick="addItem()" id="btn-add-item" data-i18n="add">+ Add</button>
+    <button onclick="closeAddPanel()" style="background:none;border:none;color:var(--text-3);font-size:1.4rem;cursor:pointer;padding:4px 6px;line-height:1;flex-shrink:0">✕</button>
   </div>
   <div style="display:flex;gap:8px">
     <select class="input" id="item-cat" style="flex:2"></select>

@@ -89,9 +89,11 @@ window.toggleListMenu = function() {
 };
 
 window.renderPage = function() {
-  var unchecked = window.items.filter(function(i) { return (i.item_state||'unchecked') === 'unchecked'; });
+  // Sort alphabetically A-Z
+  var sortedItems = window.items.slice().sort(function(a, b) { return (a.name||'').localeCompare(b.name||'', undefined, {sensitivity:'base'}); });
+  var unchecked = sortedItems.filter(function(i) { return (i.item_state||'unchecked') === 'unchecked'; });
   var below = window.items.filter(function(i) { return i.item_state === 'checked' || i.item_state === 'completed'; });
-  var completed = window.items.filter(function(i) { return i.item_state === 'completed'; });
+  var completed = sortedItems.filter(function(i) { return i.item_state === 'completed'; });
   var pct = window.items.length > 0 ? Math.round((below.length / window.items.length) * 100) : 0;
   var prog = document.getElementById('top-progress');
   if (prog) prog.style.width = pct + '%';
@@ -162,6 +164,11 @@ window.cycleState = function(id) {
     window._localChange = false;
     clearTimeout(window._localChangeTimer);
   });
+};
+
+window.closeAddPanel = function() {
+  document.getElementById('add-panel').classList.add('hidden');
+  document.getElementById('add-pill').classList.remove('hidden');
 };
 
 window.focusAddInput = function() {
