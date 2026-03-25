@@ -62,7 +62,7 @@ window.loadAll = function() {
 window.renderTopbar = function() {
   document.getElementById('list-title').textContent = window.listData.name;
   var isOwner = window.listData.owner_id === window.currentUser.id;
-  var avatars = window.members.slice(0,5).map(function(m) {
+  var avatars = window.members.filter(function(m) { return m.user_id !== window.currentUser.id; }).slice(0,5).map(function(m) {
     var name = (m.profiles && m.profiles.display_name) || '?';
     return '<div class="avatar avatar-sm" style="background:' + avatarColor(name) + '">' + avatarInitials(name) + '</div>';
   }).join('');
