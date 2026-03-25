@@ -21,6 +21,7 @@ document.addEventListener('click', function(e) {
   if (!panel || panel.classList.contains('hidden')) return;
   if (!panel.contains(e.target) && !pill.contains(e.target)) {
     panel.classList.add('hidden');
+    pill.classList.remove('hidden');
   }
 });
 
@@ -162,8 +163,22 @@ window.cycleState = function(id) {
   });
 };
 
-window.focusAddInput = function() { document.getElementById('add-panel').classList.remove('hidden'); setTimeout(function(){ document.getElementById('item-input').focus(); }, 50); };
-window.toggleAddPanel = function() { document.getElementById('add-panel').classList.toggle('hidden'); if (!document.getElementById('add-panel').classList.contains('hidden')) setTimeout(function(){ document.getElementById('item-input').focus(); }, 50); };
+window.focusAddInput = function() {
+  document.getElementById('add-panel').classList.remove('hidden');
+  document.getElementById('add-pill').classList.add('hidden');
+  setTimeout(function(){ document.getElementById('item-input').focus(); }, 50);
+};
+window.toggleAddPanel = function() {
+  var panel = document.getElementById('add-panel');
+  var pill  = document.getElementById('add-pill');
+  panel.classList.toggle('hidden');
+  if (!panel.classList.contains('hidden')) {
+    pill.classList.add('hidden');
+    setTimeout(function(){ document.getElementById('item-input').focus(); }, 50);
+  } else {
+    pill.classList.remove('hidden');
+  }
+};
 
 window.addItem = function() {
   var name = document.getElementById('item-input').value.trim(); if (!name) return;

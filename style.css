@@ -253,7 +253,7 @@ body {
 
 /* Add pill */
 .add-pill {
-  position:fixed; bottom:120px;
+  position:fixed; bottom:160px;
   right:max(16px, calc(50vw - 480px/2 + 16px));
   display:flex; z-index:60; border-radius:var(--r-full); overflow:hidden;
   box-shadow:0 4px 16px rgba(91,156,246,.45);
