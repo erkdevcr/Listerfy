@@ -126,7 +126,7 @@ body {
 .list-card {
   background:#303030; border-radius:var(--r-lg); padding:16px;
   margin:0 12px 15px; position:relative; cursor:pointer;
-  transition:background var(--transition); border:1px solid var(--border);
+  transition:background var(--transition), margin 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease; border:1px solid var(--border);
 }
 .list-card:active { background:var(--bg-3); }
 .list-card-name { font-size:var(--fs-lg); font-weight:800; color:var(--text-1); margin-bottom:10px; padding-right:24px; }

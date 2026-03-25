@@ -321,8 +321,10 @@ window.dragStart = function(e, id) {
   setTimeout(function() {
     var el = document.getElementById('card-' + id);
     if (el) {
-      el.style.opacity = '0.35';
-      el.style.transform = 'scale(0.97)';
+      el.style.opacity = '0.3';
+      el.style.transform = 'scale(0.98) rotate(1deg)';
+      el.style.boxShadow = '0 12px 32px rgba(0,0,0,0.5)';
+      el.style.zIndex = '999';
     }
   }, 0);
 };
@@ -330,40 +332,42 @@ window.dragStart = function(e, id) {
 window.dragOver = function(e, targetId) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
-  if (_dragOverId === targetId || targetId === _dragId) return;
+  if (targetId === _dragId) return;
+  if (_dragOverId === targetId) return;
 
-  // Reset previous target
-  if (_dragOverId) {
-    var prev = document.getElementById('card-' + _dragOverId);
-    if (prev) { prev.style.transform = ''; prev.style.marginTop = ''; prev.style.marginBottom = ''; prev.style.transition = ''; }
-  }
+  // Reset ALL cards to no margin first
+  document.querySelectorAll('.list-card').forEach(function(c) {
+    c.style.marginTop = '';
+    c.style.marginBottom = '';
+  });
+
   _dragOverId = targetId;
 
-  // Find drag direction and push target card
+  // Calculate dragged card height to open same-sized gap
+  var dragEl = document.getElementById('card-' + _dragId);
+  var dragH = dragEl ? (dragEl.offsetHeight + 10) + 'px' : '90px';
+
   var cards = Array.from(document.querySelectorAll('.list-card'));
   var fromIdx = cards.findIndex(function(c) { return c.id === 'card-' + _dragId; });
   var toIdx   = cards.findIndex(function(c) { return c.id === 'card-' + targetId; });
   var targetEl = document.getElementById('card-' + targetId);
+
   if (targetEl) {
-    targetEl.style.transition = 'transform 0.18s ease, margin 0.18s ease';
+    // Open gap above or below target depending on drag direction
     if (fromIdx < toIdx) {
-      // Dragging down — push target up
-      targetEl.style.transform = 'translateY(-12px)';
+      // Dragging DOWN — open gap below target
+      targetEl.style.marginBottom = dragH;
     } else {
-      // Dragging up — push target down
-      targetEl.style.transform = 'translateY(12px)';
+      // Dragging UP — open gap above target
+      targetEl.style.marginTop = dragH;
     }
   }
 };
 
 window.dragLeave = function(e, targetId) {
-  // Only reset if leaving to outside the card
   if (e.relatedTarget && e.currentTarget.contains(e.relatedTarget)) return;
   var el = document.getElementById('card-' + targetId);
-  if (el) {
-    el.style.transform = '';
-    el.style.transition = '';
-  }
+  if (el) { el.style.marginTop = ''; el.style.marginBottom = ''; }
   if (_dragOverId === targetId) _dragOverId = null;
 };
 
@@ -373,7 +377,10 @@ window.dragDrop = function(e, targetId) {
   document.querySelectorAll('.list-card').forEach(function(c) {
     c.style.transform = '';
     c.style.opacity = '';
-    c.style.transition = '';
+    c.style.boxShadow = '';
+    c.style.zIndex = '';
+    c.style.marginTop = '';
+    c.style.marginBottom = '';
   });
   _dragOverId = null;
   if (_dragId === targetId) { _dragId = null; return; }
@@ -392,7 +399,6 @@ window.dragDrop = function(e, targetId) {
     parent.insertBefore(fromEl, toEl);
   }
 
-  // Save new order to DB
   var newCards = Array.from(document.querySelectorAll('.list-card'));
   newCards.forEach(function(card, idx) {
     var listId = card.id.replace('card-', '');
@@ -402,11 +408,13 @@ window.dragDrop = function(e, targetId) {
 };
 
 window.dragEnd = function(e) {
-  // Reset all cards in case drop didn't fire
   document.querySelectorAll('.list-card').forEach(function(c) {
     c.style.transform = '';
     c.style.opacity = '';
-    c.style.transition = '';
+    c.style.boxShadow = '';
+    c.style.zIndex = '';
+    c.style.marginTop = '';
+    c.style.marginBottom = '';
   });
   _dragId = null;
   _dragOverId = null;
