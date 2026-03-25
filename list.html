@@ -61,9 +61,10 @@
 <!-- Action bar (long press) -->
 <div class="action-bar hidden" id="action-bar">
   <button class="action-bar-btn" onclick="clearSelection()">✕</button>
-  <button class="action-bar-btn" onclick="editSelected()" data-i18n="edit">EDIT</button>
-  <button class="action-bar-btn" onclick="openCopyModal()" data-i18n="copy">COPY</button>
-  <button class="action-bar-btn" onclick="deleteSelected()" data-i18n="delete">DELETE</button>
+  <span class="action-bar-btn" id="action-bar-info" style="flex:1.5;font-size:var(--fs-sm);font-weight:800;border-left:1px solid rgba(255,255,255,.2)"></span>
+  <button class="action-bar-btn" id="btn-action-edit" onclick="editSelected()" data-i18n="edit">Editar</button>
+  <button class="action-bar-btn" onclick="copySelectedItems()" data-i18n="copy">Copiar</button>
+  <button class="action-bar-btn" onclick="deleteSelectedItems()" data-i18n="delete">Eliminar</button>
 </div>
 
 <!-- Modal: edit item -->

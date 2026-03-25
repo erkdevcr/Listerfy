@@ -129,8 +129,8 @@ window.renderItem = function(item) {
   return '<div class="item-row" id="row-' + item.id + '"' +
     ' ontouchstart="startLongPress(\'' + item.id + '\',event)" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"' +
     ' onmousedown="startLongPress(\'' + item.id + '\',event)" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()">' +
-    '<div class="item-circle ' + circleClass + '" onclick="window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')" ></div>' +
-    '<span class="item-name" style="' + nameStyle + '" onclick="window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')">' + esc(item.name) +
+    '<div class="item-circle ' + circleClass + '" onclick="if(window._longPressFired){window._longPressFired=false;return;} window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')" ></div>' +
+    '<span class="item-name" style="' + nameStyle + '" onclick="if(window._longPressFired){window._longPressFired=false;return;} window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')">' + esc(item.name) +
       (item.quantity ? ' <span style="color:var(--text-3);font-size:var(--fs-xs)">' + esc(item.quantity) + '</span>' : '') +
     '</span>' +
     '<div class="item-cat-icon">' + catIcon + '</div>' +
@@ -196,7 +196,14 @@ window.addItem = function() {
   });
 };
 
-window.startLongPress = function(id) { window.longPressTimer = setTimeout(function() { window.selectItem(id); }, 600); };
+window._longPressFired = false;
+window.startLongPress = function(id) {
+  window._longPressFired = false;
+  window.longPressTimer = setTimeout(function() {
+    window._longPressFired = true;
+    window.selectItem(id);
+  }, 600);
+};
 window.cancelLongPress = function() { clearTimeout(window.longPressTimer); };
 
 window.selectItem = function(id) {
@@ -229,10 +236,10 @@ window.selectItem = function(id) {
   if (count === 0) {
     window.clearSelection(); return;
   } else if (count === 1) {
-    info.textContent = '1 seleccionado';
+    info.textContent = '1 ' + t('selected1');
     editBtn.style.display = 'block';
   } else {
-    info.textContent = count + ' seleccionados';
+    info.textContent = count + ' ' + t('selectedN');
     editBtn.style.display = 'none';
   }
 };
