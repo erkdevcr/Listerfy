@@ -160,7 +160,9 @@ window.createList = function() {
   var btn = document.getElementById('btn-create');
   var span = btn.querySelector('span');
   btn.disabled = true; span.textContent = t('creating');
-  db.from('lists').insert({ name: name, owner_id: currentUser.id }).select().single().then(function(res) {
+  // Assign sort_order = number of existing lists so new list goes to end
+  var nextOrder = document.querySelectorAll('.list-card').length;
+  db.from('lists').insert({ name: name, owner_id: currentUser.id, sort_order: nextOrder }).select().single().then(function(res) {
     btn.disabled = false; span.textContent = t('createList');
     if (res.error) { showToast(t('errorGeneral'), 'error'); return; }
     closeNewList();
@@ -373,8 +375,13 @@ function _containerDrop(e) {
     removePlaceholder();
   }
   document.querySelectorAll('.list-card').forEach(function(c) { c.style.transform=''; c.style.opacity=''; });
-  Array.from(document.querySelectorAll('.list-card')).forEach(function(c, i) {
-    db.from('lists').update({ sort_order: i }).eq('id', c.id.replace('card-', ''));
+  // Save order with gaps of 10 to avoid conflicts
+  var saveCards = Array.from(document.querySelectorAll('.list-card'));
+  var saveChain = Promise.resolve();
+  saveCards.forEach(function(c, i) {
+    saveChain = saveChain.then(function() {
+      return db.from('lists').update({ sort_order: i * 10 }).eq('id', c.id.replace('card-', ''));
+    });
   });
   _dragId = null;
 }
