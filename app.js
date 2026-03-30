@@ -1,23 +1,18 @@
 // app.js — Listerfy main app logic
-
 window.window.currentUser = null;
 window.window.currentProfile = null;
 window.window.activeListId = null;
-
 const AVATAR_COLORS = ['#16a34a','#0284c7','#7c3aed','#db2777','#ea580c','#0891b2','#65a30d','#d97706','#0e7490','#b45309'];
-
 window.avatarColor = function(str) {
   str = str || '';
   var h = 0;
   for (var i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
-
 window.avatarInitials = function(n) {
   n = n || '';
   return n.trim().split(' ').map(function(w){ return w[0]; }).join('').toUpperCase().slice(0,2) || '?';
 }
-
 window.esc = function(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -29,7 +24,6 @@ window.startApp = function() {
     db.from('profiles').select('*').eq('id', user.id).single().then(function(res) {
       window.currentProfile = res.data;
       applyTranslations();
-      // Re-apply to elements outside page-content (header, title)
       document.querySelectorAll('[data-i18n]').forEach(function(el) {
         el.textContent = t(el.dataset.i18n);
       });
@@ -57,9 +51,9 @@ window.loadLists = function() {
           db.from('items').select('*',{count:'exact',head:true}).eq('list_id', list.id).eq('is_checked', true),
           db.from('list_members').select('user_id, profiles(display_name)').eq('list_id', list.id),
         ]).then(function(results) {
-          var total   = results[0].count || 0;
+          var total = results[0].count || 0;
           var checked = results[1].count || 0;
-          var members = results[2].data  || [];
+          var members = results[2].data || [];
           var lastVisit = localStorage.getItem('last_visit_' + list.id) || '2000-01-01';
           enriched[idx] = Object.assign({}, list, { total: total, checked: checked, members: members, hasNew: false });
           pending--;
@@ -90,7 +84,6 @@ window.renderLists = function(lists) {
       var name = (m.profiles && m.profiles.display_name) || '?';
       return '<div class="avatar" style="background:' + avatarColor(name) + '">' + avatarInitials(name) + '</div>';
     }).join('');
-
     return '<div class="list-card" id="card-' + list.id + '"' +
       ' draggable="true"' +
       ' ondragstart="dragStart(event, \'' + list.id + '\')"' +
@@ -119,7 +112,6 @@ window.renderLists = function(lists) {
       '</div>' +
     '</div>';
   }).join('');
-
   var el = document.getElementById('page-content');
   if (el) el.innerHTML = '<div id="lists-container" style="padding-top:8px">' + html + '</div>';
 }
@@ -152,6 +144,7 @@ window.openNewList = function() {
   setTimeout(function(){ document.getElementById('new-list-name').focus(); }, 100);
   applyTranslations();
 }
+
 window.closeNewList = function() { document.getElementById('modal-new-list').classList.add('hidden'); }
 
 window.createList = function() {
@@ -159,11 +152,12 @@ window.createList = function() {
   if (!name) return;
   var btn = document.getElementById('btn-create');
   var span = btn.querySelector('span');
-  btn.disabled = true; span.textContent = t('creating');
-  // Assign sort_order = number of existing lists so new list goes to end
+  btn.disabled = true;
+  span.textContent = t('creating');
   var nextOrder = document.querySelectorAll('.list-card').length;
   db.from('lists').insert({ name: name, owner_id: currentUser.id, sort_order: nextOrder }).select().single().then(function(res) {
-    btn.disabled = false; span.textContent = t('createList');
+    btn.disabled = false;
+    span.textContent = t('createList');
     if (res.error) { showToast(t('errorGeneral'), 'error'); return; }
     closeNewList();
     goToList(res.data.id);
@@ -176,6 +170,7 @@ window.openRename = function(id, currentName) {
   document.getElementById('modal-rename').classList.remove('hidden');
   setTimeout(function(){ document.getElementById('rename-input').focus(); }, 100);
 }
+
 window.confirmRename = function() {
   var name = document.getElementById('rename-input').value.trim();
   if (!name || !activeListId) return;
@@ -192,14 +187,17 @@ window.openInvite = function(id) {
   document.getElementById('modal-invite').classList.remove('hidden');
   setTimeout(function(){ document.getElementById('invite-email-input').focus(); }, 100);
 }
+
 window.sendInvite = function() {
   var email = document.getElementById('invite-email-input').value.trim().toLowerCase();
   if (!email || !email.includes('@')) return;
   var btn = document.getElementById('btn-send-invite');
   var span = btn.querySelector('span');
-  btn.disabled = true; span.textContent = t('sending');
+  btn.disabled = true;
+  span.textContent = t('sending');
   db.from('invitations').insert({ list_id: activeListId, invited_by: currentUser.id, invited_email: email }).then(function(res) {
-    btn.disabled = false; span.textContent = t('sendInvite');
+    btn.disabled = false;
+    span.textContent = t('sendInvite');
     if (res.error) { showToast(t('errorGeneral'), 'error'); return; }
     document.getElementById('modal-invite').classList.add('hidden');
     showToast(t('inviteSent'), 'success');
@@ -210,7 +208,7 @@ window.duplicateList = function(id) {
   db.from('lists').select('*').eq('id', id).single().then(function(res) {
     if (!res.data) return;
     var original = res.data;
-    db.from('lists').insert({ name: original.name + ' (copia)', owner_id: currentUser.id }).select().single().then(function(res2) {
+    db.from('lists').insert({ name: original.name + ' ' + t('listCopy'), owner_id: currentUser.id }).select().single().then(function(res2) {
       if (!res2.data) return;
       db.from('items').select('*').eq('list_id', id).then(function(itemsRes) {
         if (itemsRes.data && itemsRes.data.length) {
@@ -279,7 +277,8 @@ window.loadNotifications = function() {
       return '<div class="notif-item ' + (n.is_read ? '' : 'unread') + '" id="notif-' + n.id + '">' +
         '<div class="notif-text">' + text + '</div>' +
         '<div class="notif-time">' + timeAgo(n.created_at) + '</div>' +
-        actions + '</div>';
+        actions +
+        '</div>';
     }).join('');
   });
 }
@@ -304,78 +303,52 @@ window.respondInvite = function(invitationId, status, notifId) {
 
 window.subscribeNotifs = function() {
   db.channel('notifs:' + currentUser.id)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + currentUser.id },
-      function() { loadNotifications(); })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + currentUser.id }, function() {
+      loadNotifications();
+    })
     .subscribe();
 }
 
 // ── Drag & Drop para reordenar listas ────────
 var _dragId = null;
-var _dragOverId = null;
-
-// ── Drag & Drop — container level ─────────────
-var _dragId = null;
-
 function removePlaceholder() {
   var ph = document.getElementById('drag-placeholder');
   if (ph && ph.parentNode) ph.parentNode.removeChild(ph);
 }
-
 function _containerDragOver(e) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
   var dragEl = document.getElementById('card-' + _dragId);
   if (!dragEl) return;
-
   var allCards = Array.from(document.querySelectorAll('.list-card'));
   var dragIdx = allCards.findIndex(function(c) { return c.id === 'card-' + _dragId; });
-
   var cards = allCards.filter(function(c) { return c !== dragEl; });
   var insertBefore = null;
   for (var i = 0; i < cards.length; i++) {
     var rect = cards[i].getBoundingClientRect();
     if (e.clientY < rect.top + rect.height / 2) { insertBefore = cards[i]; break; }
   }
-
-  // Skip if placeholder would be immediately adjacent (same effective position)
   var insertIdx = insertBefore ? allCards.indexOf(insertBefore) : allCards.length;
-  if (insertIdx === dragIdx || insertIdx === dragIdx + 1) {
-    removePlaceholder();
-    return;
-  }
-
+  if (insertIdx === dragIdx || insertIdx === dragIdx + 1) { removePlaceholder(); return; }
   var ph = document.getElementById('drag-placeholder');
   if (!ph) {
     ph = document.createElement('div');
     ph.id = 'drag-placeholder';
     ph.style.cssText = 'height:' + dragEl.offsetHeight + 'px;margin:0 12px 10px;border-radius:16px;background:rgba(52,176,128,0.12);border:2px dashed #34b080;pointer-events:none;box-sizing:border-box;';
   }
-
   var parent = dragEl.parentNode;
-  if (insertBefore) {
-    if (ph.nextSibling !== insertBefore) parent.insertBefore(ph, insertBefore);
-  } else {
-    if (parent.lastChild !== ph) parent.appendChild(ph);
-  }
+  if (insertBefore) { if (ph.nextSibling !== insertBefore) parent.insertBefore(ph, insertBefore); }
+  else { if (parent.lastChild !== ph) parent.appendChild(ph); }
 }
-
 function _containerDrop(e) {
   e.preventDefault();
   var container = document.getElementById('page-content');
-  if (container) {
-    container.removeEventListener('dragover', _containerDragOver);
-    container.removeEventListener('drop', _containerDrop);
-  }
+  if (container) { container.removeEventListener('dragover', _containerDragOver); container.removeEventListener('drop', _containerDrop); }
   var ph = document.getElementById('drag-placeholder');
   var dragEl = document.getElementById('card-' + _dragId);
-  if (ph && dragEl && ph.parentNode) {
-    ph.parentNode.insertBefore(dragEl, ph);
-    removePlaceholder();
-  } else {
-    removePlaceholder();
-  }
+  if (ph && dragEl && ph.parentNode) { ph.parentNode.insertBefore(dragEl, ph); removePlaceholder(); }
+  else { removePlaceholder(); }
   document.querySelectorAll('.list-card').forEach(function(c) { c.style.transform=''; c.style.opacity=''; });
-  // Save order with gaps of 10 to avoid conflicts
   var saveCards = Array.from(document.querySelectorAll('.list-card'));
   var saveChain = Promise.resolve();
   saveCards.forEach(function(c, i) {
@@ -395,18 +368,12 @@ window.dragStart = function(e, id) {
     if (el) { el.style.opacity = '0.25'; el.style.transform = 'scale(0.97)'; }
   }, 0);
   var container = document.getElementById('page-content');
-  if (container) {
-    container.addEventListener('dragover', _containerDragOver);
-    container.addEventListener('drop', _containerDrop);
-  }
+  if (container) { container.addEventListener('dragover', _containerDragOver); container.addEventListener('drop', _containerDrop); }
 };
 
 window.dragEnd = function(e) {
   var container = document.getElementById('page-content');
-  if (container) {
-    container.removeEventListener('dragover', _containerDragOver);
-    container.removeEventListener('drop', _containerDrop);
-  }
+  if (container) { container.removeEventListener('dragover', _containerDragOver); container.removeEventListener('drop', _containerDrop); }
   removePlaceholder();
   document.querySelectorAll('.list-card').forEach(function(c) { c.style.transform=''; c.style.opacity=''; });
   _dragId = null;
@@ -423,21 +390,13 @@ window.initNotifBtn = function() {
     panel.classList.toggle('hidden');
     if (!panel.classList.contains('hidden')) {
       window.loadNotifications();
-      // Mark all unread as read when panel opens
       setTimeout(function() {
-        db.from('notifications')
-          .update({ is_read: true })
-          .eq('user_id', window.currentUser.id)
-          .eq('is_read', false)
-          .then(function() {
-            window.updateNotifBadge(0);
-          });
+        db.from('notifications').update({ is_read: true }).eq('user_id', window.currentUser.id).eq('is_read', false).then(function() {
+          window.updateNotifBadge(0);
+        });
       }, 1500);
       setTimeout(function() {
-        document.addEventListener('click', function h() {
-          panel.classList.add('hidden');
-          document.removeEventListener('click', h);
-        });
+        document.addEventListener('click', function h() { panel.classList.add('hidden'); document.removeEventListener('click', h); });
       }, 0);
     }
   });
@@ -446,9 +405,9 @@ window.initNotifBtn = function() {
 window.timeAgo = function(dateStr) {
   var lang = localStorage.getItem('lang') || 'es';
   var diff = Date.now() - new Date(dateStr).getTime();
-  var mins  = Math.floor(diff / 60000);
+  var mins = Math.floor(diff / 60000);
   var hours = Math.floor(diff / 3600000);
-  var days  = Math.floor(diff / 86400000);
+  var days = Math.floor(diff / 86400000);
   if (lang === 'es') {
     if (mins < 1) return 'ahora mismo';
     if (mins < 60) return 'hace ' + mins + ' min';
@@ -462,11 +421,9 @@ window.timeAgo = function(dateStr) {
   }
 }
 
-// Auto-start — wait for all scripts to be ready
+// Auto-start
 if (typeof requireAuth === 'function') {
   window.startApp();
 } else {
-  window.addEventListener('load', function() {
-    window.startApp();
-  });
+  window.addEventListener('load', function() { window.startApp(); });
 }

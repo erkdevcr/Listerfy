@@ -18,8 +18,8 @@
     }
     .profile-name-big { font-size: var(--fs-xl); font-weight: 800; }
     .profile-email-big { font-size: var(--fs-sm); color: var(--text-3); }
-  .nav-icon svg { color: #436e60; }
-  body.light .nav-icon svg { color: #8bc7b3; }
+    .nav-icon svg { color: #436e60; }
+    body.light .nav-icon svg { color: #8bc7b3; }
   </style>
 </head>
 <body>
@@ -27,11 +27,9 @@
   <div class="topbar">
     <span class="topbar-title" data-i18n="profile">Profile</span>
   </div>
-
   <div class="page-content" id="page-content">
     <div class="empty-state"><div class="spinner spinner-brand"><svg viewBox="0 0 377.87 347.58" xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="#34b080"><path d="M154.2,211.57c-35.21-34.4-68.39-71.02-103.88-105.16l96.8,173.21c5.26,9.01,18.37,10.12,25.07,2.13L377.87,9.71c-.29,2.45-1.62,4.98-2.6,7.27-12.8,30.03-27.84,59.22-40.8,89.19,28.97,70.14,9.77,151.17-47.84,200.13-82.99,70.53-209.83,47.79-263.68-46.2C-24.9,176.57,4.67,70.26,87.56,22.79,163.68-20.82,262.52-.2,313.73,70.67l-154.51,144.37c-2.46,1.18-3.6-2.07-5.03-3.47Z"/></svg></div></div>
   </div>
-
   <nav class="bottom-nav">
     <button class="nav-tab" onclick="location.href='app.html'">
       <span class="nav-icon"><svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="26" height="26"><path d="M134.4,345.6c-8.53,0-14.93,6.4-14.93,14.93s6.4,14.93,14.93,14.93,14.93-6.4,14.93-14.93-6.4-14.93-14.93-14.93Z"/><path d="M134.4,238.93c-8.53,0-14.93,6.4-14.93,14.93s6.4,14.93,14.93,14.93,14.93-6.4,14.93-14.93c0-10.67-6.4-14.93-14.93-14.93Z"/><path d="M256,0C114.62,0,0,114.62,0,256s114.62,256,256,256,256-114.62,256-256S397.38,0,256,0ZM134.4,405.33c-25.6,0-46.93-19.2-46.93-46.93,0-25.6,19.2-46.93,46.93-46.93s46.93,19.2,46.93,46.93c-2.13,27.73-21.33,46.93-46.93,46.93ZM134.4,298.67c-25.6,0-46.93-19.2-46.93-46.93s19.2-44.8,46.93-44.8,46.93,19.2,46.93,46.93-21.33,44.8-46.93,44.8ZM183.47,132.27l-46.93,46.93c-2.13,4.27-6.4,4.27-10.67,4.27s-8.53-2.13-10.67-4.27l-23.47-23.47c-6.4-4.27-6.4-14.93,0-21.33s14.93-6.4,21.33,0l12.8,12.8,36.27-36.27c6.4-6.4,14.93-6.4,21.33,0s6.4,14.93,0,21.33ZM409.6,375.47h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93ZM409.6,268.8h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93ZM409.6,162.13h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93Z"/></svg></span>
@@ -65,9 +63,13 @@
 <script src="supabase.js"></script>
 <script>
   const AVATAR_COLORS = ['#16a34a','#0284c7','#7c3aed','#db2777','#ea580c','#0891b2','#65a30d','#d97706'];
-  function avatarColor(s='') { let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length]; }
-  function avatarInitials(n='') { return n.trim().split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?'; }
-
+  function avatarColor(s='') {
+    let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h);
+    return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length];
+  }
+  function avatarInitials(n='') {
+    return n.trim().split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?';
+  }
   var currentUser=null, currentProfile=null, activeField=null;
 
   window.addEventListener('load', function() {
@@ -83,12 +85,11 @@
   });
 
   function renderProfile() {
-    const name  = currentProfile?.display_name || '';
+    const name = currentProfile?.display_name || '';
     const email = currentUser.email || '';
     const theme = localStorage.getItem('theme') || 'dark';
-    const lang  = currentLang;
-    const fs    = localStorage.getItem('fontSize') || 'normal';
-
+    const lang = currentLang;
+    const fs = localStorage.getItem('fontSize') || 'normal';
     document.getElementById('page-content').innerHTML = `
       <!-- Avatar -->
       <div class="profile-avatar-wrap">
@@ -99,7 +100,7 @@
 
       <!-- Account section -->
       <div class="profile-section">
-        <div class="profile-section-title">${currentLang==='es'?'Cuenta':'Account'}</div>
+        <div class="profile-section-title">${t('account')}</div>
         <div class="profile-row" onclick="openField('name')">
           <span class="profile-row-label" data-i18n="changeName">${t('changeName')}</span>
           <span class="profile-row-value">${esc(name)} ›</span>
@@ -116,7 +117,7 @@
 
       <!-- Preferences section -->
       <div class="profile-section">
-        <div class="profile-section-title">${currentLang==='es'?'Preferencias':'Preferences'}</div>
+        <div class="profile-section-title">${t('preferences')}</div>
 
         <!-- Dark mode -->
         <div class="profile-row" style="cursor:default">
@@ -168,10 +169,7 @@
   }
 
   // ── Language ──
-  function changeLang(lang) {
-    setLang(lang);
-    renderProfile();
-  }
+  function changeLang(lang) { setLang(lang); renderProfile(); }
 
   // ── Font size ──
   function setFontSize(size) {
@@ -186,7 +184,6 @@
     activeField = field;
     const title = document.getElementById('field-modal-title');
     const inputs = document.getElementById('field-inputs');
-
     if (field === 'name') {
       title.textContent = t('changeName');
       inputs.innerHTML = `<label class="input-label" data-i18n="newName">${t('newName')}</label>
@@ -200,7 +197,6 @@
       inputs.innerHTML = `<label class="input-label" data-i18n="newPassword">${t('newPassword')}</label>
         <input class="input" type="password" id="field-val" placeholder="••••••••" minlength="6"/>`;
     }
-
     document.getElementById('modal-edit-field').classList.remove('hidden');
     setTimeout(() => document.getElementById('field-val')?.focus(), 100);
   }
@@ -209,8 +205,8 @@
     const val = document.getElementById('field-val')?.value?.trim();
     if (!val) return;
     const btn = document.getElementById('btn-save-field');
-    btn.disabled = true; btn.querySelector('span').textContent = t('saving');
-
+    btn.disabled = true;
+    btn.querySelector('span').textContent = t('saving');
     let error = null;
     if (activeField === 'name') {
       const { error: e } = await db.from('profiles').update({ display_name: val }).eq('id', currentUser.id);
@@ -223,8 +219,8 @@
       const { error: e } = await db.auth.updateUser({ password: val });
       error = e;
     }
-
-    btn.disabled = false; btn.querySelector('span').textContent = t('save');
+    btn.disabled = false;
+    btn.querySelector('span').textContent = t('save');
     if (error) { showToast(error.message || t('errorGeneral'), 'error'); return; }
     document.getElementById('modal-edit-field').classList.add('hidden');
     showToast('✓', 'success');
@@ -232,9 +228,12 @@
   }
 
   async function confirmDeleteAccount() {
-    if (!confirm('¿Eliminar tu cuenta permanentemente?\n\nEsto borrará tu cuenta y todas tus listas. Esta acción no se puede deshacer.')) return;
-    var input = prompt('Escribe ELIMINAR para confirmar:');
-    if (input !== 'ELIMINAR') { alert('Cancelado. Debes escribir exactamente ELIMINAR.'); return; }
+    if (!confirm(t('deleteAccountConfirm'))) return;
+    var input = prompt(t('deleteAccountPrompt'));
+    if (input !== t('deleteAccountWord')) {
+      alert(t('deleteAccountCancelled'));
+      return;
+    }
     try {
       const uid = currentUser.id;
       await db.from('list_members').delete().eq('user_id', uid);
@@ -253,7 +252,9 @@
     location.href = 'index.html';
   }
 
-  function esc(s='') { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function esc(s='') {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 </script>
 </body>
 </html>
