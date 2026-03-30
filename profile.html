@@ -20,6 +20,21 @@
     .profile-email-big { font-size: var(--fs-sm); color: var(--text-3); }
     .nav-icon svg { color: #436e60; }
     body.light .nav-icon svg { color: #8bc7b3; }
+
+    #del-confirm-word {
+      font-weight: 800;
+      color: #ef4444;
+      font-family: monospace;
+      background: rgba(239,68,68,.12);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    .shake { animation: shake .3s ease; }
   </style>
 </head>
 <body>
@@ -57,6 +72,28 @@
   </div>
 </div>
 
+<!-- Modal: delete account (2-step, fully custom — no native confirm/prompt) -->
+<div class="modal-overlay hidden centered" id="modal-delete-account">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="del-modal-title" style="color:#ef4444"></div>
+    <div class="modal-body">
+      <p id="del-modal-desc" style="font-size:var(--fs-sm);color:var(--text-2);line-height:1.5;margin-bottom:4px"></p>
+      <div id="del-step2" style="display:none;margin-top:12px">
+        <p id="del-modal-prompt" style="font-size:var(--fs-sm);color:var(--text-2);margin-bottom:10px"></p>
+        <input class="input" type="text" id="del-confirm-input"
+          autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+          oninput="document.getElementById('btn-del-ok').disabled=false"
+          onkeydown="if(event.key==='Enter') delNextStep()"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="btn-del-cancel" onclick="closeDel()"></button>
+      <button class="btn btn-danger" id="btn-del-ok" onclick="delNextStep()"></button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="i18n.js"></script>
@@ -71,6 +108,7 @@
     return n.trim().split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?';
   }
   var currentUser=null, currentProfile=null, activeField=null;
+  var _delStep = 0;
 
   window.addEventListener('load', function() {
     requireAuth().then(function(user) {
@@ -91,87 +129,133 @@
     const lang = currentLang;
     const fs = localStorage.getItem('fontSize') || 'normal';
     document.getElementById('page-content').innerHTML = `
-      <!-- Avatar -->
       <div class="profile-avatar-wrap">
         <div class="profile-avatar-big" style="background:${avatarColor(name)}">${avatarInitials(name)}</div>
         <div class="profile-name-big">${esc(name)}</div>
         <div class="profile-email-big">${esc(email)}</div>
       </div>
 
-      <!-- Account section -->
       <div class="profile-section">
         <div class="profile-section-title">${t('account')}</div>
         <div class="profile-row" onclick="openField('name')">
-          <span class="profile-row-label" data-i18n="changeName">${t('changeName')}</span>
+          <span class="profile-row-label">${t('changeName')}</span>
           <span class="profile-row-value">${esc(name)} ›</span>
         </div>
         <div class="profile-row" onclick="openField('email')">
-          <span class="profile-row-label" data-i18n="changeEmail">${t('changeEmail')}</span>
+          <span class="profile-row-label">${t('changeEmail')}</span>
           <span class="profile-row-value">${esc(email)} ›</span>
         </div>
         <div class="profile-row" onclick="openField('password')">
-          <span class="profile-row-label" data-i18n="changePassword">${t('changePassword')}</span>
+          <span class="profile-row-label">${t('changePassword')}</span>
           <span class="profile-row-value">••••••• ›</span>
         </div>
       </div>
 
-      <!-- Preferences section -->
       <div class="profile-section">
         <div class="profile-section-title">${t('preferences')}</div>
-
-        <!-- Dark mode -->
         <div class="profile-row" style="cursor:default">
-          <span class="profile-row-label" data-i18n="darkMode">${t('darkMode')}</span>
+          <span class="profile-row-label">${t('darkMode')}</span>
           <label class="toggle">
             <input type="checkbox" id="toggle-theme" ${theme==='dark'?'checked':''} onchange="toggleTheme(this.checked)"/>
             <div class="toggle-track"></div>
           </label>
         </div>
-
-        <!-- Language -->
         <div class="profile-row" style="cursor:default">
-          <span class="profile-row-label" data-i18n="language">${t('language')}</span>
+          <span class="profile-row-label">${t('language')}</span>
           <div style="display:flex;gap:6px">
             <button class="btn btn-sm ${lang==='es'?'btn-brand':'btn-outline'}" onclick="changeLang('es')">ES</button>
             <button class="btn btn-sm ${lang==='en'?'btn-brand':'btn-outline'}" onclick="changeLang('en')">EN</button>
           </div>
         </div>
-
-        <!-- Font size -->
         <div class="profile-row" style="cursor:default;flex-direction:column;align-items:flex-start;gap:10px">
-          <span class="profile-row-label" data-i18n="fontSize">${t('fontSize')}</span>
+          <span class="profile-row-label">${t('fontSize')}</span>
           <div class="font-size-opts w-full">
-            <button class="font-size-opt ${fs==='xs'?'active':''}" onclick="setFontSize('xs')" data-i18n="fontXS">${t('fontXS')}</button>
-            <button class="font-size-opt ${fs==='small'?'active':''}" onclick="setFontSize('small')" data-i18n="fontSmall">${t('fontSmall')}</button>
-            <button class="font-size-opt ${fs==='normal'?'active':''}" onclick="setFontSize('normal')" data-i18n="fontNormal">${t('fontNormal')}</button>
-            <button class="font-size-opt ${fs==='large'?'active':''}" onclick="setFontSize('large')" data-i18n="fontLarge">${t('fontLarge')}</button>
-            <button class="font-size-opt ${fs==='xl'?'active':''}" onclick="setFontSize('xl')" data-i18n="fontXL">${t('fontXL')}</button>
+            <button class="font-size-opt ${fs==='xs'?'active':''}" onclick="setFontSize('xs')">${t('fontXS')}</button>
+            <button class="font-size-opt ${fs==='small'?'active':''}" onclick="setFontSize('small')">${t('fontSmall')}</button>
+            <button class="font-size-opt ${fs==='normal'?'active':''}" onclick="setFontSize('normal')">${t('fontNormal')}</button>
+            <button class="font-size-opt ${fs==='large'?'active':''}" onclick="setFontSize('large')">${t('fontLarge')}</button>
+            <button class="font-size-opt ${fs==='xl'?'active':''}" onclick="setFontSize('xl')">${t('fontXL')}</button>
           </div>
         </div>
       </div>
 
-      <!-- Logout -->
       <div style="padding:16px">
-        <button class="btn btn-danger btn-full btn-lg" onclick="handleLogout()" data-i18n="logout">${t('logout')}</button>
+        <button class="btn btn-danger btn-full btn-lg" onclick="handleLogout()">${t('logout')}</button>
         <p style="text-align:center;padding:16px 0 8px;font-size:var(--fs-xs);color:var(--text-3)">© 2026 ErkDev</p>
         <p style="text-align:center;padding:0 0 24px;">
-          <span onclick="confirmDeleteAccount()" style="font-size:10px;color:#444;text-decoration:underline;cursor:pointer;letter-spacing:.03em;user-select:none;" data-i18n="deleteAccount">${t('deleteAccount')}</span>
+          <span onclick="confirmDeleteAccount()" style="font-size:10px;color:#444;text-decoration:underline;cursor:pointer;letter-spacing:.03em;user-select:none;">${t('deleteAccount')}</span>
         </p>
       </div>
     `;
   }
 
-  // ── Theme ──
-  function toggleTheme(isDark) {
-    const theme = isDark ? 'dark' : 'light';
-    localStorage.setItem('theme', theme);
-    document.body.classList.toggle('light', !isDark);
+  // ── Delete account — modal 2 pasos ──────────────────────────────
+  function confirmDeleteAccount() {
+    _delStep = 1;
+    document.getElementById('del-modal-title').textContent = t('deleteAccount');
+    document.getElementById('del-modal-desc').textContent = t('deleteAccountConfirm');
+    document.getElementById('del-step2').style.display = 'none';
+    document.getElementById('del-confirm-input').value = '';
+    document.getElementById('btn-del-cancel').textContent = t('cancel');
+    document.getElementById('btn-del-ok').textContent = t('delete');
+    document.getElementById('btn-del-ok').disabled = false;
+    document.getElementById('modal-delete-account').classList.remove('hidden');
   }
 
-  // ── Language ──
-  function changeLang(lang) { setLang(lang); renderProfile(); }
+  function delNextStep() {
+    if (_delStep === 1) {
+      // Paso 2: pedir que escriba la palabra
+      _delStep = 2;
+      var word = t('deleteAccountWord');
+      document.getElementById('del-modal-desc').textContent = '';
+      document.getElementById('del-modal-prompt').innerHTML = t('deleteAccountPrompt') + ' <span id="del-confirm-word">' + word + '</span>';
+      document.getElementById('del-step2').style.display = 'block';
+      document.getElementById('btn-del-ok').disabled = true;
+      setTimeout(function() { document.getElementById('del-confirm-input').focus(); }, 100);
 
-  // ── Font size ──
+    } else if (_delStep === 2) {
+      var input = document.getElementById('del-confirm-input').value.trim().toUpperCase();
+      var expected = t('deleteAccountWord').toUpperCase();
+      if (input !== expected) {
+        var inp = document.getElementById('del-confirm-input');
+        inp.classList.remove('shake');
+        void inp.offsetWidth;
+        inp.classList.add('shake');
+        inp.value = '';
+        document.getElementById('btn-del-ok').disabled = true;
+        return;
+      }
+      doDeleteAccount();
+    }
+  }
+
+  function closeDel() {
+    document.getElementById('modal-delete-account').classList.add('hidden');
+    _delStep = 0;
+  }
+
+  async function doDeleteAccount() {
+    var okBtn = document.getElementById('btn-del-ok');
+    okBtn.disabled = true;
+    okBtn.textContent = '...';
+    try {
+      const uid = currentUser.id;
+      await db.from('list_members').delete().eq('user_id', uid);
+      await db.from('lists').delete().eq('owner_id', uid);
+      await db.from('profiles').delete().eq('id', uid);
+      await db.auth.signOut();
+      location.href = 'index.html';
+    } catch(e) {
+      await db.auth.signOut();
+      location.href = 'index.html';
+    }
+  }
+
+  function toggleTheme(isDark) {
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    document.body.classList.toggle('light', !isDark);
+  }
+  function changeLang(lang) { setLang(lang); renderProfile(); }
   function setFontSize(size) {
     localStorage.setItem('fontSize', size);
     document.body.classList.remove('font-xs','font-small','font-normal','font-large','font-xl');
@@ -179,22 +263,21 @@
     renderProfile();
   }
 
-  // ── Edit field ──
   function openField(field) {
     activeField = field;
     const title = document.getElementById('field-modal-title');
     const inputs = document.getElementById('field-inputs');
     if (field === 'name') {
       title.textContent = t('changeName');
-      inputs.innerHTML = `<label class="input-label" data-i18n="newName">${t('newName')}</label>
+      inputs.innerHTML = `<label class="input-label">${t('newName')}</label>
         <input class="input" type="text" id="field-val" value="${esc(currentProfile?.display_name||'')}" maxlength="60"/>`;
     } else if (field === 'email') {
       title.textContent = t('changeEmail');
-      inputs.innerHTML = `<label class="input-label" data-i18n="newEmail">${t('newEmail')}</label>
+      inputs.innerHTML = `<label class="input-label">${t('newEmail')}</label>
         <input class="input" type="email" id="field-val" value="${esc(currentUser.email||'')}"/>`;
     } else if (field === 'password') {
       title.textContent = t('changePassword');
-      inputs.innerHTML = `<label class="input-label" data-i18n="newPassword">${t('newPassword')}</label>
+      inputs.innerHTML = `<label class="input-label">${t('newPassword')}</label>
         <input class="input" type="password" id="field-val" placeholder="••••••••" minlength="6"/>`;
     }
     document.getElementById('modal-edit-field').classList.remove('hidden');
@@ -225,26 +308,6 @@
     document.getElementById('modal-edit-field').classList.add('hidden');
     showToast('✓', 'success');
     renderProfile();
-  }
-
-  async function confirmDeleteAccount() {
-    if (!confirm(t('deleteAccountConfirm'))) return;
-    var input = prompt(t('deleteAccountPrompt'));
-    if (input !== t('deleteAccountWord')) {
-      alert(t('deleteAccountCancelled'));
-      return;
-    }
-    try {
-      const uid = currentUser.id;
-      await db.from('list_members').delete().eq('user_id', uid);
-      await db.from('lists').delete().eq('owner_id', uid);
-      await db.from('profiles').delete().eq('id', uid);
-      await db.auth.signOut();
-      location.href = 'index.html';
-    } catch(e) {
-      await db.auth.signOut();
-      location.href = 'index.html';
-    }
   }
 
   async function handleLogout() {
