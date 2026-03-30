@@ -369,8 +369,12 @@ select.input {
 .toast.hiding  { animation:toastOut .2s ease forwards; }
 
 /* Spinner */
-.spinner { width:20px; height:20px; border:2.5px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; }
-.spinner-brand { border-color:rgba(52,176,128,.2); border-top-color:var(--brand); }
+.spinner { width:56px; height:56px; display:flex; align-items:center; justify-content:center; }
+.spinner-brand svg { animation: spinner-glow 1.6s ease-in-out infinite; }
+@keyframes spinner-glow {
+  0%,100% { filter: drop-shadow(0 0 0px #34b080); opacity:.35; transform:scale(.95); }
+  50%      { filter: drop-shadow(0 0 18px #34b080) drop-shadow(0 0 6px #34b080); opacity:1; transform:scale(1.05); }
+}
 
 /* Empty state */
 .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:64px 20px; text-align:center; color:var(--text-3); }
