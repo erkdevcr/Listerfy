@@ -77,6 +77,7 @@ const i18n = {
     darkMode: 'Dark mode', language: 'Language', fontSize: 'Font size',
     fontXS: 'Minimum', fontSmall: 'Small', fontNormal: 'Normal', fontLarge: 'Large', fontXL: 'Maximum',
     save: 'Save', saving: 'Saving...', logout: 'Sign out',
+    deleteAccount: 'unsubscribe · delete account',
     newName: 'New name', newEmail: 'New email', newPassword: 'New password',
     currentPassword: 'Current password',
     addCategory: 'New category', categoryName: 'Name', categoryIcon: 'Emoji',
