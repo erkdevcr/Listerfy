@@ -153,6 +153,9 @@
       <div style="padding:16px">
         <button class="btn btn-danger btn-full btn-lg" onclick="handleLogout()" data-i18n="logout">${t('logout')}</button>
         <p style="text-align:center;padding:16px 0 8px;font-size:var(--fs-xs);color:var(--text-3)">© 2026 ErkDev</p>
+        <p style="text-align:center;padding:0 0 24px;">
+          <span onclick="confirmDeleteAccount()" style="font-size:10px;color:#444;text-decoration:underline;cursor:pointer;letter-spacing:.03em;user-select:none;">darse de baja · eliminar cuenta</span>
+        </p>
       </div>
     `;
   }
@@ -226,6 +229,23 @@
     document.getElementById('modal-edit-field').classList.add('hidden');
     showToast('✓', 'success');
     renderProfile();
+  }
+
+  async function confirmDeleteAccount() {
+    if (!confirm('¿Eliminar tu cuenta permanentemente?\n\nEsto borrará tu cuenta y todas tus listas. Esta acción no se puede deshacer.')) return;
+    var input = prompt('Escribe ELIMINAR para confirmar:');
+    if (input !== 'ELIMINAR') { alert('Cancelado. Debes escribir exactamente ELIMINAR.'); return; }
+    try {
+      const uid = currentUser.id;
+      await db.from('list_members').delete().eq('user_id', uid);
+      await db.from('lists').delete().eq('owner_id', uid);
+      await db.from('profiles').delete().eq('id', uid);
+      await db.auth.signOut();
+      location.href = 'index.html';
+    } catch(e) {
+      await db.auth.signOut();
+      location.href = 'index.html';
+    }
   }
 
   async function handleLogout() {
