@@ -13,20 +13,16 @@ function avatarColor(s) { s=s||''; var h=0; for(var i=0;i<s.length;i++) h=s.char
 function avatarInitials(n) { n=n||''; return n.trim().split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)||'?'; }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-// Close add-panel when clicking outside
 document.addEventListener('click', function(e) {
   var panel = document.getElementById('add-panel');
   var pill = document.getElementById('add-pill');
   if (!panel || panel.classList.contains('hidden')) return;
   if (!panel.contains(e.target) && !pill.contains(e.target)) {
-    e.stopPropagation();
-    e.preventDefault();
-    panel.classList.add('hidden');
-    pill.classList.remove('hidden');
+    e.stopPropagation(); e.preventDefault();
+    panel.classList.add('hidden'); pill.classList.remove('hidden');
   }
-}, true); // capture phase — fires before item onclick handlers
+}, true);
 
-// Auto-start
 setTimeout(function() {
   if (!LIST_ID) { location.href='app.html'; return; }
   requireAuth().then(function(user) {
@@ -39,7 +35,7 @@ setTimeout(function() {
 
 window.loadAll = function() {
   return Promise.all([
-    db.from('lists').select('*').eq('id', LIST_ID).single(),
+    db.from('lists').select('*').eq('id', LIST_ID).is('deleted_at', null).single(),
     db.from('categories').select('*').order('is_default', { ascending: false }),
     db.from('list_members').select('user_id, role, profiles(display_name, email)').eq('list_id', LIST_ID),
     db.from('items').select('*, categories(name_es, name_en, icon)').eq('list_id', LIST_ID).order('created_at', { ascending: true })
@@ -62,9 +58,7 @@ window.loadAll = function() {
 window.renderTopbar = function() {
   document.getElementById('list-title').textContent = window.listData.name;
   var isOwner = window.listData.owner_id === window.currentUser.id;
-  var avatars = window.members.filter(function(m) {
-    return m.user_id !== window.currentUser.id;
-  }).slice(0,5).map(function(m) {
+  var avatars = window.members.filter(function(m) { return m.user_id !== window.currentUser.id; }).slice(0,5).map(function(m) {
     var name = (m.profiles && m.profiles.display_name) || '?';
     return '<div class="avatar avatar-sm" style="background:' + avatarColor(name) + '">' + avatarInitials(name) + '</div>';
   }).join('');
@@ -82,28 +76,19 @@ window.renderTopbar = function() {
 };
 
 window.toggleListMenu = function() {
-  var m = document.getElementById('list-menu');
-  m.classList.toggle('hidden');
+  var m = document.getElementById('list-menu'); m.classList.toggle('hidden');
   if (!m.classList.contains('hidden')) {
-    setTimeout(function() {
-      document.addEventListener('click', function h() { m.classList.add('hidden'); document.removeEventListener('click', h); });
-    }, 0);
+    setTimeout(function() { document.addEventListener('click', function h() { m.classList.add('hidden'); document.removeEventListener('click', h); }); }, 0);
   }
 };
 
 window.renderPage = function() {
-  // Sort alphabetically A-Z
-  var sortedItems = window.items.slice().sort(function(a, b) {
-    return (a.name||'').localeCompare(b.name||'', undefined, {sensitivity:'base'});
-  });
+  var sortedItems = window.items.slice().sort(function(a, b) { return (a.name||'').localeCompare(b.name||'', undefined, {sensitivity:'base'}); });
   var unchecked = sortedItems.filter(function(i) { return (i.item_state||'unchecked') === 'unchecked'; });
   var below = sortedItems.filter(function(i) { return i.item_state === 'checked' || i.item_state === 'completed'; });
   var completed = sortedItems.filter(function(i) { return i.item_state === 'completed'; });
-
   var pct = window.items.length > 0 ? Math.round((below.length / window.items.length) * 100) : 0;
-  var prog = document.getElementById('top-progress');
-  if (prog) prog.style.width = pct + '%';
-
+  var prog = document.getElementById('top-progress'); if (prog) prog.style.width = pct + '%';
   var html = '';
   if (window.items.length === 0) {
     html = '<div class="empty-state"><div class="empty-icon">🛒</div><h3>' + t('noItems') + '</h3><p>' + t('noItemsHint') + '</p></div>';
@@ -113,18 +98,14 @@ window.renderPage = function() {
       html += '<div style="padding:10px 16px 8px;background:var(--bg-3);border-top:1px solid var(--border-2);border-bottom:1px solid var(--border-2);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)">(' + below.length + ') ' + t('checkedItems') + '</div>';
       html += below.map(function(i) { return window.renderItem(i); }).join('');
     }
-    // Only show buttons if there are items below
     if (below.length > 0) {
       html += '<div style="display:flex;gap:10px;padding:16px;margin-top:8px">';
-      if (completed.length > 0) {
-        html += '<button class="btn btn-outline btn-full" onclick="clearCompleted()">' + t('clearCompleted') + '</button>';
-      }
+      if (completed.length > 0) html += '<button class="btn btn-outline btn-full" onclick="clearCompleted()">' + t('clearCompleted') + '</button>';
       html += '<button class="btn btn-danger btn-full" onclick="document.getElementById(\'modal-clear-all\').classList.remove(\'hidden\')">' + t('clearAll') + '</button>';
       html += '</div>';
     }
   }
-  var el = document.getElementById('page-content');
-  if (el) el.innerHTML = html;
+  var el = document.getElementById('page-content'); if (el) el.innerHTML = html;
 };
 
 window.renderItem = function(item) {
@@ -138,89 +119,47 @@ window.renderItem = function(item) {
     ' onmousedown="startLongPress(\'' + item.id + '\',event)" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()">' +
     '<div class="item-circle ' + circleClass + '" onclick="if(window._longPressFired){window._longPressFired=false;return;} window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')" ></div>' +
     '<span class="item-name" style="' + nameStyle + '" onclick="if(window._longPressFired){window._longPressFired=false;return;} window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')">' +
-      esc(item.name) +
-      (item.quantity ? ' <span style="color:var(--text-3);font-size:var(--fs-xs)">' + esc(item.quantity) + '</span>' : '') +
+      esc(item.name) + (item.quantity ? ' <span style="color:var(--text-3);font-size:var(--fs-xs)">' + esc(item.quantity) + '</span>' : '') +
     '</span>' +
     '<div class="item-cat-icon">' + catIcon + '</div>' +
     '</div>';
 };
 
-// unchecked(azul) -> checked(verde) -> completed(tachado rojo) -> checked(verde)
-// Track last local change to avoid double-rendering from realtime
 window._localChange = false;
 window.cycleState = function(id) {
-  var item = window.items.find(function(i) { return i.id === id; });
-  if (!item) return;
+  var item = window.items.find(function(i) { return i.id === id; }); if (!item) return;
   var state = item.item_state || 'unchecked';
   var next = state === 'unchecked' ? 'checked' : (state === 'checked' ? 'completed' : 'checked');
   item.item_state = next;
-  window._localChange = true;
-  clearTimeout(window._localChangeTimer);
+  window._localChange = true; clearTimeout(window._localChangeTimer);
   window._localChangeTimer = setTimeout(function() { window._localChange = false; }, 2000);
   window.renderPage();
-  db.from('items').update({
-    item_state: next,
-    is_checked: next !== 'unchecked',
-    checked_by: next !== 'unchecked' ? window.currentUser.id : null,
-    checked_at: next !== 'unchecked' ? new Date().toISOString() : null
-  }).eq('id', id).then(function() {
-    window._localChange = false;
-    clearTimeout(window._localChangeTimer);
-  });
+  db.from('items').update({ item_state: next, is_checked: next !== 'unchecked', checked_by: next !== 'unchecked' ? window.currentUser.id : null, checked_at: next !== 'unchecked' ? new Date().toISOString() : null }).eq('id', id).then(function() { window._localChange = false; clearTimeout(window._localChangeTimer); });
 };
 
-window.closeAddPanel = function() {
-  document.getElementById('add-panel').classList.add('hidden');
-  document.getElementById('add-pill').classList.remove('hidden');
-};
-
-window.focusAddInput = function() {
-  document.getElementById('add-panel').classList.remove('hidden');
-  document.getElementById('add-pill').classList.add('hidden');
-  setTimeout(function(){ document.getElementById('item-input').focus(); }, 50);
-};
-
+window.closeAddPanel = function() { document.getElementById('add-panel').classList.add('hidden'); document.getElementById('add-pill').classList.remove('hidden'); };
 window.toggleAddPanel = function() {
-  var panel = document.getElementById('add-panel');
-  var pill = document.getElementById('add-pill');
+  var panel = document.getElementById('add-panel'); var pill = document.getElementById('add-pill');
   panel.classList.toggle('hidden');
-  if (!panel.classList.contains('hidden')) {
-    pill.classList.add('hidden');
-    setTimeout(function(){ document.getElementById('item-input').focus(); }, 50);
-  } else {
-    pill.classList.remove('hidden');
-  }
+  if (!panel.classList.contains('hidden')) { pill.classList.add('hidden'); setTimeout(function(){ document.getElementById('item-input').focus(); }, 50); }
+  else { pill.classList.remove('hidden'); }
 };
 
 window.addItem = function() {
-  var name = document.getElementById('item-input').value.trim();
-  if (!name) return;
+  var name = document.getElementById('item-input').value.trim(); if (!name) return;
   var catId = document.getElementById('item-cat').value || null;
   var qty = document.getElementById('item-qty').value.trim() || null;
-  var btn = document.getElementById('btn-add-item');
-  btn.disabled = true;
-  btn.textContent = t('adding');
-  db.from('items').insert({
-    list_id: LIST_ID, name: name, quantity: qty, category_id: catId,
-    added_by: window.currentUser.id, item_state: 'unchecked'
-  }).then(function(res) {
-    btn.disabled = false;
-    btn.textContent = t('add');
+  var btn = document.getElementById('btn-add-item'); btn.disabled = true; btn.textContent = t('adding');
+  db.from('items').insert({ list_id: LIST_ID, name: name, quantity: qty, category_id: catId, added_by: window.currentUser.id, item_state: 'unchecked' }).then(function(res) {
+    btn.disabled = false; btn.textContent = t('add');
     if (res.error) { showToast(t('errorGeneral'), 'error'); return; }
-    document.getElementById('item-input').value = '';
-    document.getElementById('item-qty').value = '';
+    document.getElementById('item-input').value = ''; document.getElementById('item-qty').value = '';
     document.getElementById('item-input').focus();
   });
 };
 
 window._longPressFired = false;
-window.startLongPress = function(id) {
-  window._longPressFired = false;
-  window.longPressTimer = setTimeout(function() {
-    window._longPressFired = true;
-    window.selectItem(id);
-  }, 600);
-};
+window.startLongPress = function(id) { window._longPressFired = false; window.longPressTimer = setTimeout(function() { window._longPressFired = true; window.selectItem(id); }, 600); };
 window.cancelLongPress = function() { clearTimeout(window.longPressTimer); };
 
 window.selectItem = function(id) {
@@ -229,34 +168,22 @@ window.selectItem = function(id) {
     document.getElementById('add-pill').classList.add('hidden');
     document.getElementById('btn-action-edit').style.display = 'block';
     document.getElementById('action-bar-info').textContent = '';
-    var b = document.getElementById('back-btn');
-    b.textContent = '✕';
-    b.onclick = window.clearSelection;
+    var b = document.getElementById('back-btn'); b.textContent = '✕'; b.onclick = window.clearSelection;
     window._multiSelectMode = true;
   }
   var idx = window.selectedItemIds.indexOf(id);
-  if (idx === -1) {
-    window.selectedItemIds.push(id);
-    var row = document.getElementById('row-' + id);
-    if (row) row.classList.add('selected');
-  } else {
-    window.selectedItemIds.splice(idx, 1);
-    var row = document.getElementById('row-' + id);
-    if (row) row.classList.remove('selected');
-  }
+  if (idx === -1) { window.selectedItemIds.push(id); var row = document.getElementById('row-' + id); if (row) row.classList.add('selected'); }
+  else { window.selectedItemIds.splice(idx, 1); var row = document.getElementById('row-' + id); if (row) row.classList.remove('selected'); }
   window.selectedItemId = window.selectedItemIds[0] || null;
   var count = window.selectedItemIds.length;
-  var info = document.getElementById('action-bar-info');
-  var editBtn = document.getElementById('btn-action-edit');
+  var info = document.getElementById('action-bar-info'); var editBtn = document.getElementById('btn-action-edit');
   if (count === 0) { window.clearSelection(); return; }
   else if (count === 1) { info.textContent = '1 ' + t('selected1'); editBtn.style.display = 'block'; }
   else { info.textContent = count + ' ' + t('selectedN'); editBtn.style.display = 'none'; }
 };
 
 window.clearSelection = function() {
-  window.selectedItemId = null;
-  window.selectedItemIds = [];
-  window._multiSelectMode = false;
+  window.selectedItemId = null; window.selectedItemIds = []; window._multiSelectMode = false;
   document.getElementById('action-bar').classList.add('hidden');
   document.getElementById('add-pill').classList.remove('hidden');
   document.querySelectorAll('.item-row').forEach(function(r) { r.classList.remove('selected'); });
@@ -265,28 +192,18 @@ window.clearSelection = function() {
   b.onclick = function() { location.href='app.html'; };
 };
 
-window.handleItemClick = function(id) { if (window._multiSelectMode) window.selectItem(id); };
-
 window._lastEditId = null;
 window.editSelected = function() {
-  var item = window.items.find(function(i) { return i.id === window.selectedItemId; });
-  if (!item) return;
+  var item = window.items.find(function(i) { return i.id === window.selectedItemId; }); if (!item) return;
   window._lastEditId = window.selectedItemId;
-  document.getElementById('edit-name').value = item.name;
-  document.getElementById('edit-qty').value = item.quantity || '';
+  document.getElementById('edit-name').value = item.name; document.getElementById('edit-qty').value = item.quantity || '';
   window.renderCatOptions('edit-cat', item.category_id);
-  document.getElementById('modal-edit').classList.remove('hidden');
-  window.clearSelection();
+  document.getElementById('modal-edit').classList.remove('hidden'); window.clearSelection();
 };
-
 window.saveEdit = function() {
-  var name = document.getElementById('edit-name').value.trim();
-  if (!name) return;
-  var qty = document.getElementById('edit-qty').value.trim() || null;
-  var catId = document.getElementById('edit-cat').value || null;
-  db.from('items').update({ name: name, quantity: qty, category_id: catId }).eq('id', window._lastEditId).then(function() {
-    document.getElementById('modal-edit').classList.add('hidden');
-  });
+  var name = document.getElementById('edit-name').value.trim(); if (!name) return;
+  var qty = document.getElementById('edit-qty').value.trim() || null; var catId = document.getElementById('edit-cat').value || null;
+  db.from('items').update({ name: name, quantity: qty, category_id: catId }).eq('id', window._lastEditId).then(function() { document.getElementById('modal-edit').classList.add('hidden'); });
 };
 
 window.openCopyModal = function() {
@@ -294,167 +211,94 @@ window.openCopyModal = function() {
   db.from('list_members').select('list_id').eq('user_id', window.currentUser.id).then(function(res) {
     var ids = (res.data||[]).map(function(m){ return m.list_id; }).filter(function(id){ return id !== LIST_ID; });
     var sel = document.getElementById('copy-list-select');
-    if (!ids.length) {
-      sel.innerHTML = '<option>' + t('noMembers') + '</option>';
-    } else {
-      db.from('lists').select('id, name').in('id', ids).then(function(r) {
-        sel.innerHTML = (r.data||[]).map(function(l){ return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('');
-      });
-    }
-    document.getElementById('modal-copy').classList.remove('hidden');
-    window.clearSelection();
+    if (!ids.length) { sel.innerHTML = '<option>' + t('noMembers') + '</option>'; }
+    else { db.from('lists').select('id, name').in('id', ids).is('deleted_at', null).then(function(r) { sel.innerHTML = (r.data||[]).map(function(l){ return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join(''); }); }
+    document.getElementById('modal-copy').classList.remove('hidden'); window.clearSelection();
   });
 };
-
 window.confirmCopy = function() {
-  var targetId = document.getElementById('copy-list-select').value;
-  if (!targetId) return;
+  var targetId = document.getElementById('copy-list-select').value; if (!targetId) return;
   if (window._pendingCopyIds && window._pendingCopyIds.length > 1) {
-    var ids = window._pendingCopyIds;
-    window._pendingCopyIds = null;
+    var ids = window._pendingCopyIds; window._pendingCopyIds = null;
     var chain = Promise.resolve();
-    ids.forEach(function(id) {
-      var item = window.items.find(function(i){ return i.id === id; });
-      if (!item) return;
-      chain = chain.then(function() {
-        return db.from('items').insert({ list_id: targetId, name: item.name, quantity: item.quantity, category_id: item.category_id, added_by: window.currentUser.id, item_state: 'unchecked' });
-      });
-    });
-    chain.then(function() { document.getElementById('modal-copy').classList.add('hidden'); showToast('✓', 'success'); });
-    return;
+    ids.forEach(function(id) { var item = window.items.find(function(i){ return i.id === id; }); if (!item) return; chain = chain.then(function() { return db.from('items').insert({ list_id: targetId, name: item.name, quantity: item.quantity, category_id: item.category_id, added_by: window.currentUser.id, item_state: 'unchecked' }); }); });
+    chain.then(function() { document.getElementById('modal-copy').classList.add('hidden'); showToast('✓', 'success'); }); return;
   }
   window._pendingCopyIds = null;
-  var item = window.items.find(function(i){ return i.id === window._lastEditId; });
-  if (!item) return;
-  db.from('items').insert({ list_id: targetId, name: item.name, quantity: item.quantity, category_id: item.category_id, added_by: window.currentUser.id, item_state: 'unchecked' }).then(function() {
-    document.getElementById('modal-copy').classList.add('hidden');
-    showToast('✓', 'success');
-  });
+  var item = window.items.find(function(i){ return i.id === window._lastEditId; }); if (!item) return;
+  db.from('items').insert({ list_id: targetId, name: item.name, quantity: item.quantity, category_id: item.category_id, added_by: window.currentUser.id, item_state: 'unchecked' }).then(function() { document.getElementById('modal-copy').classList.add('hidden'); showToast('✓', 'success'); });
 };
 
-window.deleteSelected = function() {
-  window._lastEditId = window.selectedItemId;
-  document.getElementById('modal-del-item').classList.remove('hidden');
-  window.clearSelection();
-};
-
+window.deleteSelected = function() { window._lastEditId = window.selectedItemId; document.getElementById('modal-del-item').classList.remove('hidden'); window.clearSelection(); };
 window.deleteSelectedItems = function() {
   if (window.selectedItemIds.length === 0) return;
-  if (window.selectedItemIds.length === 1) {
-    window._lastEditId = window.selectedItemIds[0];
-    window.clearSelection();
-    document.getElementById('modal-del-item').classList.remove('hidden');
-    return;
-  }
-  var ids = window.selectedItemIds.slice();
-  window.clearSelection();
-  window._localChange = true;
+  if (window.selectedItemIds.length === 1) { window._lastEditId = window.selectedItemIds[0]; window.clearSelection(); document.getElementById('modal-del-item').classList.remove('hidden'); return; }
+  var ids = window.selectedItemIds.slice(); window.clearSelection(); window._localChange = true;
   var chain = Promise.resolve();
   ids.forEach(function(id) { chain = chain.then(function() { return db.from('items').delete().eq('id', id); }); });
   chain.then(function() { window._localChange = false; });
 };
-
 window.copySelectedItems = function() {
   if (window.selectedItemIds.length === 0) return;
-  if (window.selectedItemIds.length === 1) {
-    window._lastEditId = window.selectedItemIds[0];
-    window.clearSelection();
-    window.openCopyModal();
-    return;
-  }
-  var ids = window.selectedItemIds.slice();
-  window._pendingCopyIds = ids;
-  window.clearSelection();
+  if (window.selectedItemIds.length === 1) { window._lastEditId = window.selectedItemIds[0]; window.clearSelection(); window.openCopyModal(); return; }
+  var ids = window.selectedItemIds.slice(); window._pendingCopyIds = ids; window.clearSelection();
   db.from('list_members').select('list_id').eq('user_id', window.currentUser.id).then(function(res) {
     var listIds = (res.data||[]).map(function(m){ return m.list_id; }).filter(function(id){ return id !== LIST_ID; });
     var sel = document.getElementById('copy-list-select');
-    if (!listIds.length) {
-      sel.innerHTML = '<option>' + t('noMembers') + '</option>';
-    } else {
-      db.from('lists').select('id, name').in('id', listIds).then(function(r) {
-        sel.innerHTML = (r.data||[]).map(function(l){ return '<option value="' + l.id + '">' + l.name + '</option>'; }).join('');
-      });
-    }
+    if (!listIds.length) { sel.innerHTML = '<option>' + t('noMembers') + '</option>'; }
+    else { db.from('lists').select('id, name').in('id', listIds).is('deleted_at', null).then(function(r) { sel.innerHTML = (r.data||[]).map(function(l){ return '<option value="' + l.id + '">' + l.name + '</option>'; }).join(''); }); }
     document.getElementById('modal-copy').classList.remove('hidden');
   });
 };
-
-window.confirmDeleteItem = function() {
-  db.from('items').delete().eq('id', window._lastEditId).then(function() {
-    document.getElementById('modal-del-item').classList.add('hidden');
-  });
-};
+window.confirmDeleteItem = function() { db.from('items').delete().eq('id', window._lastEditId).then(function() { document.getElementById('modal-del-item').classList.add('hidden'); }); };
 
 window.clearCompleted = function() {
   var completedIds = window.items.filter(function(i) { return i.item_state === 'completed'; }).map(function(i) { return i.id; });
   if (!completedIds.length) return;
   window.items.forEach(function(i) { if (i.item_state === 'completed') i.item_state = 'unchecked'; });
-  window.renderPage();
-  window._localChange = true;
+  window.renderPage(); window._localChange = true;
   var chain = Promise.resolve();
-  completedIds.forEach(function(id) {
-    chain = chain.then(function() {
-      return db.from('items').update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null }).eq('id', id);
-    });
-  });
+  completedIds.forEach(function(id) { chain = chain.then(function() { return db.from('items').update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null }).eq('id', id); }); });
   chain.then(function() { window._localChange = false; });
 };
-
 window.doClearAll = function() {
   var allIds = window.items.map(function(i) { return i.id; });
-  window.items.forEach(function(i) { i.item_state = 'unchecked'; });
-  window.renderPage();
-  document.getElementById('modal-clear-all').classList.add('hidden');
-  window._localChange = true;
+  window.items.forEach(function(i) { i.item_state = 'unchecked'; }); window.renderPage();
+  document.getElementById('modal-clear-all').classList.add('hidden'); window._localChange = true;
   var chain = Promise.resolve();
-  allIds.forEach(function(id) {
-    chain = chain.then(function() {
-      return db.from('items').update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null }).eq('id', id);
-    });
-  });
+  allIds.forEach(function(id) { chain = chain.then(function() { return db.from('items').update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null }).eq('id', id); }); });
   chain.then(function() { window._localChange = false; });
 };
 
-window.openInviteModal = function() {
-  document.getElementById('inv-email').value = '';
-  document.getElementById('modal-invite').classList.remove('hidden');
-  setTimeout(function(){ document.getElementById('inv-email').focus(); }, 100);
-  applyTranslations();
-};
-
+window.openInviteModal = function() { document.getElementById('inv-email').value = ''; document.getElementById('modal-invite').classList.remove('hidden'); setTimeout(function(){ document.getElementById('inv-email').focus(); }, 100); applyTranslations(); };
 window.sendInvite = function() {
-  var email = document.getElementById('inv-email').value.trim().toLowerCase();
-  if (!email || !email.includes('@')) return;
-  var btn = document.getElementById('btn-inv');
-  var span = btn.querySelector('span');
-  btn.disabled = true;
-  span.textContent = t('sending');
+  var email = document.getElementById('inv-email').value.trim().toLowerCase(); if (!email || !email.includes('@')) return;
+  var btn = document.getElementById('btn-inv'); var span = btn.querySelector('span'); btn.disabled = true; span.textContent = t('sending');
   db.from('invitations').insert({ list_id: LIST_ID, invited_by: window.currentUser.id, invited_email: email }).then(function(res) {
-    btn.disabled = false;
-    span.textContent = t('sendInvite');
+    btn.disabled = false; span.textContent = t('sendInvite');
     if (res.error) { showToast(t('errorGeneral'), 'error'); return; }
-    document.getElementById('modal-invite').classList.add('hidden');
-    showToast(t('inviteSent'), 'success');
+    document.getElementById('modal-invite').classList.add('hidden'); showToast(t('inviteSent'), 'success');
   });
 };
 
+// SOFT DELETE — manda a papelera
 window.confirmDeleteList = function() {
-  if (!confirm(currentLang==='es'?'¿Eliminar esta lista?':'Delete this list?')) return;
-  db.from('lists').delete().eq('id', LIST_ID).then(function() { location.href='app.html'; });
+  if (!confirm(currentLang==='es'?'¿Mover esta lista a la papelera?':'Move this list to trash?')) return;
+  db.from('lists').update({ deleted_at: new Date().toISOString(), deleted_by: window.currentUser.id }).eq('id', LIST_ID).then(function() {
+    showToast(t('sentToTrash'), 'success');
+    setTimeout(function() { location.href='app.html'; }, 800);
+  });
 };
-
 window.confirmLeaveList = function() {
   if (!confirm(currentLang==='es'?'¿Dejar esta lista?':'Leave this list?')) return;
   db.from('list_members').delete().eq('list_id', LIST_ID).eq('user_id', window.currentUser.id).then(function() { location.href='app.html'; });
 };
 
 window.openMembersModal = function() {
-  var modal = document.getElementById('modal-members');
-  var list = document.getElementById('modal-members-list');
+  var modal = document.getElementById('modal-members'); var list = document.getElementById('modal-members-list');
   if (!modal || !list) return;
   var html = window.members.map(function(m) {
-    var name = (m.profiles && m.profiles.display_name) || '?';
-    var email = (m.profiles && m.profiles.email) || '';
+    var name = (m.profiles && m.profiles.display_name) || '?'; var email = (m.profiles && m.profiles.email) || '';
     var isMe = m.user_id === window.currentUser.id;
     var COLORS = ['#16a34a','#0284c7','#7c3aed','#db2777','#ea580c','#0891b2','#65a30d','#d97706'];
     var h = 0; for (var i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h<<5)-h);
@@ -463,20 +307,16 @@ window.openMembersModal = function() {
     return '<div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border)">' +
       '<div class="avatar" style="background:' + color + ';flex-shrink:0">' + initials + '</div>' +
       '<div style="flex:1;min-width:0">' +
-        '<div style="font-weight:700;color:var(--text-1);font-size:var(--fs-base)">' + name +
-          (isMe ? ' <span style="font-size:var(--fs-xs);color:var(--brand);font-weight:600">(' + t('you') + ')</span>' : '') +
-        '</div>' +
+        '<div style="font-weight:700;color:var(--text-1);font-size:var(--fs-base)">' + name + (isMe ? ' <span style="font-size:var(--fs-xs);color:var(--brand);font-weight:600">(' + t('you') + ')</span>' : '') + '</div>' +
         '<div style="font-size:var(--fs-sm);color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + email + '</div>' +
-      '</div>' +
-      '</div>';
+      '</div></div>';
   }).join('');
   list.innerHTML = html || '<p style="padding:20px;text-align:center;color:var(--text-3)">' + t('noMembers') + '</p>';
   modal.classList.remove('hidden');
 };
 
 window.renderCatOptions = function(selectId, selectedId) {
-  var sel = document.getElementById(selectId);
-  if (!sel) return;
+  var sel = document.getElementById(selectId); if (!sel) return;
   sel.innerHTML = window.categories.map(function(c) {
     var name = currentLang === 'es' ? c.name_es : c.name_en;
     return '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + c.icon + ' ' + name + '</option>';
@@ -493,22 +333,10 @@ function reloadItemsFromDB() {
 
 window.subscribeRealtime = function() {
   db.channel('list-items:' + LIST_ID)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'items', filter: 'list_id=eq.' + LIST_ID }, function() {
-      if (window._localChange) return;
-      reloadItemsFromDB();
-    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'items', filter: 'list_id=eq.' + LIST_ID }, function() { if (window._localChange) return; reloadItemsFromDB(); })
     .subscribe();
-  window._pollInterval = setInterval(function() {
-    if (window._localChange) return;
-    reloadItemsFromDB();
-  }, 5000);
+  window._pollInterval = setInterval(function() { if (window._localChange) return; reloadItemsFromDB(); }, 5000);
 };
 
 window.addEventListener('beforeunload', function() { clearInterval(window._pollInterval); });
-
-document.addEventListener('langchange', function() {
-  window.renderCatOptions('item-cat');
-  window.renderCatOptions('edit-cat');
-  window.renderPage();
-  applyTranslations();
-});
+document.addEventListener('langchange', function() { window.renderCatOptions('item-cat'); window.renderCatOptions('edit-cat'); window.renderPage(); applyTranslations(); });

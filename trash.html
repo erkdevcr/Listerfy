@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Listerfy — Papelera</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" type="image/svg+xml" href="logo.svg"/>
+  <style>
+    .trash-card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      margin: 0 12px 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background .15s;
+      border: 2px solid transparent;
+    }
+    .trash-card.selected {
+      border-color: var(--brand);
+      background: rgba(52,176,128,.08);
+    }
+    .trash-card-icon {
+      flex-shrink: 0;
+      opacity: .45;
+    }
+    .trash-card-body { flex: 1; min-width: 0; }
+    .trash-card-name {
+      font-weight: 700;
+      font-size: var(--fs-base);
+      color: var(--text-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+    .trash-card-meta {
+      font-size: var(--fs-xs);
+      color: var(--text-3);
+      display: flex;
+      gap: 10px;
+    }
+    .trash-card-restore {
+      flex-shrink: 0;
+    }
+
+    /* action bar */
+    .trash-action-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--brand);
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      gap: 10px;
+      z-index: 100;
+    }
+    .trash-action-bar .count {
+      font-weight: 700;
+      color: #fff;
+      font-size: var(--fs-sm);
+      flex: 1;
+    }
+
+    /* modal forever delete */
+    #del-confirm-word {
+      font-weight: 800; color: #ef4444;
+      font-family: monospace;
+      background: rgba(239,68,68,.12);
+      padding: 2px 8px; border-radius: 4px;
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+    .shake { animation: shake .3s ease; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <button class="btn btn-ghost btn-icon" onclick="location.href='profile.html'" style="margin-right:4px">
+      <svg viewBox="0 0 492 492" xmlns="http://www.w3.org/2000/svg" fill="#436e60" width="22" height="22">
+        <path d="M7.86,265.12l177.68,177.68c5.07,5.07,11.83,7.86,19.04,7.86s13.97-2.79,19.04-7.86l16.13-16.14c5.07-5.06,7.86-11.83,7.86-19.04s-2.79-14.2-7.86-19.26l-103.66-103.88h329.32c14.85,0,26.58-11.62,26.58-26.48v-22.81c0-14.85-11.73-27.65-26.58-27.65H134.93l104.83-104.46c5.07-5.07,7.86-11.65,7.86-18.86s-2.79-13.88-7.86-18.95l-16.13-16.08c-5.07-5.07-11.83-7.84-19.04-7.84s-13.97,2.8-19.04,7.87L7.86,226.9C2.78,231.99-.02,238.78,0,246c-.02,7.24,2.78,14.04,7.86,19.12Z"/>
+      </svg>
+    </button>
+    <span class="topbar-title" data-i18n="trash">Papelera</span>
+  </div>
+  <div class="page-content" id="page-content" style="padding-bottom:80px">
+    <div class="empty-state">
+      <div class="spinner spinner-brand">
+        <svg viewBox="0 0 377.87 347.58" xmlns="http://www.w3.org/2000/svg" width="56" height="56" fill="#34b080">
+          <path d="M154.2,211.57c-35.21-34.4-68.39-71.02-103.88-105.16l96.8,173.21c5.26,9.01,18.37,10.12,25.07,2.13L377.87,9.71c-.29,2.45-1.62,4.98-2.6,7.27-12.8,30.03-27.84,59.22-40.8,89.19,28.97,70.14,9.77,151.17-47.84,200.13-82.99,70.53-209.83,47.79-263.68-46.2C-24.9,176.57,4.67,70.26,87.56,22.79,163.68-20.82,262.52-.2,313.73,70.67l-154.51,144.37c-2.46,1.18-3.6-2.07-5.03-3.47Z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action bar (multi-select) -->
+  <div class="trash-action-bar hidden" id="trash-action-bar">
+    <span class="count" id="trash-action-count"></span>
+    <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.5)" onclick="cancelTrashSelection()" data-i18n="cancel">Cancelar</button>
+    <button class="btn btn-sm" style="background:#ef4444;color:#fff;border:none" onclick="promptDeleteForever()" data-i18n="deleteForever">Eliminar definitivamente</button>
+  </div>
+</div>
+
+<!-- Modal: delete forever (2 steps) -->
+<div class="modal-overlay hidden centered" id="modal-del-forever">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="color:#ef4444" id="del-forever-title"></div>
+    <div class="modal-body">
+      <p id="del-forever-desc" style="font-size:var(--fs-sm);color:var(--text-2);line-height:1.5;margin-bottom:4px"></p>
+      <div id="del-forever-step2" style="display:none;margin-top:12px">
+        <p id="del-forever-prompt" style="font-size:var(--fs-sm);color:var(--text-2);margin-bottom:10px"></p>
+        <input class="input" type="text" id="del-forever-input"
+          autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+          oninput="document.getElementById('btn-del-forever-ok').disabled=false"
+          onkeydown="if(event.key==='Enter') delForeverNext()"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="btn-del-forever-cancel" onclick="closeDelForever()"></button>
+      <button class="btn btn-danger" id="btn-del-forever-ok" onclick="delForeverNext()"></button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="i18n.js"></script>
+<script src="supabase.js"></script>
+<script src="trash.js"></script>
+</body>
+</html>

@@ -1,11 +1,10 @@
 // app.js — Listerfy main app logic
-window.window.currentUser = null;
-window.window.currentProfile = null;
-window.window.activeListId = null;
+window.currentUser = null;
+window.currentProfile = null;
+window.activeListId = null;
 const AVATAR_COLORS = ['#16a34a','#0284c7','#7c3aed','#db2777','#ea580c','#0891b2','#65a30d','#d97706','#0e7490','#b45309'];
 window.avatarColor = function(str) {
-  str = str || '';
-  var h = 0;
+  str = str || ''; var h = 0;
   for (var i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
@@ -24,9 +23,6 @@ window.startApp = function() {
     db.from('profiles').select('*').eq('id', user.id).single().then(function(res) {
       window.currentProfile = res.data;
       applyTranslations();
-      document.querySelectorAll('[data-i18n]').forEach(function(el) {
-        el.textContent = t(el.dataset.i18n);
-      });
       loadLists();
       loadNotifications();
       subscribeNotifs();
@@ -40,7 +36,8 @@ window.loadLists = function() {
     var memberships = res.data;
     if (!memberships || !memberships.length) { renderEmpty(); return; }
     var ids = memberships.map(function(m){ return m.list_id; });
-    db.from('lists').select('*').in('id', ids).order('sort_order', { ascending: true }).then(function(res2) {
+    // IMPORTANT: filter out soft-deleted lists
+    db.from('lists').select('*').in('id', ids).is('deleted_at', null).order('sort_order', { ascending: true }).then(function(res2) {
       var lists = res2.data;
       if (!lists || !lists.length) { renderEmpty(); return; }
       var pending = lists.length;
@@ -54,7 +51,6 @@ window.loadLists = function() {
           var total = results[0].count || 0;
           var checked = results[1].count || 0;
           var members = results[2].data || [];
-          var lastVisit = localStorage.getItem('last_visit_' + list.id) || '2000-01-01';
           enriched[idx] = Object.assign({}, list, { total: total, checked: checked, members: members, hasNew: false });
           pending--;
           if (pending === 0) renderLists(enriched);
@@ -78,9 +74,7 @@ window.renderLists = function(lists) {
   var html = lists.map(function(list) {
     var pct = list.total > 0 ? Math.round((list.checked / list.total) * 100) : 0;
     var currentUid = window.currentUser && window.currentUser.id;
-    var avatars = list.members.filter(function(m) {
-      return m.user_id !== currentUid;
-    }).slice(0,5).map(function(m) {
+    var avatars = list.members.filter(function(m) { return m.user_id !== currentUid; }).slice(0,5).map(function(m) {
       var name = (m.profiles && m.profiles.display_name) || '?';
       return '<div class="avatar" style="background:' + avatarColor(name) + '">' + avatarInitials(name) + '</div>';
     }).join('');
@@ -107,7 +101,7 @@ window.renderLists = function(lists) {
           '<button class="dropdown-item" onclick="duplicateList(\'' + list.id + '\')"><svg width="14" height="14" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" fill="none"><path fill="#436e60" fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v9a2 2 0 002 2h2v2a2 2 0 002 2h9a2 2 0 002-2V8a2 2 0 00-2-2h-2V4a2 2 0 00-2-2H4zm9 4V4H4v9h2V8a2 2 0 012-2h5zM8 8h9v9H8V8z"/></svg> ' + t('duplicate') + '</button>' +
           (list.owner_id === currentUser.id
             ? '<button class="dropdown-item danger" onclick="confirmDeleteList(\'' + list.id + '\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H20M16 6L15.7294 5.18807C15.4671 4.40125 15.3359 4.00784 15.0927 3.71698C14.8779 3.46013 14.6021 3.26132 14.2905 3.13878C13.9376 3 13.523 3 12.6936 3H11.3064C10.477 3 10.0624 3 9.70951 3.13878C9.39792 3.26132 9.12208 3.46013 8.90729 3.71698C8.66405 4.00784 8.53292 4.40125 8.27064 5.18807L8 6M18 6V16.2C18 17.8802 18 18.7202 17.673 19.362C17.3854 19.9265 16.9265 20.3854 16.362 20.673C15.7202 21 14.8802 21 13.2 21H10.8C9.11984 21 8.27976 21 7.63803 20.673C7.07354 20.3854 6.6146 19.9265 6.32698 19.362C6 18.7202 6 17.8802 6 16.2V6M14 10V17M10 10V17" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> ' + t('deleteList') + '</button>'
-            : '<button class="dropdown-item danger" onclick="confirmLeaveList(\'' + list.id + '\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H20M16 6L15.7294 5.18807C15.4671 4.40125 15.3359 4.00784 15.0927 3.71698C14.8779 3.46013 14.6021 3.26132 14.2905 3.13878C13.9376 3 13.523 3 12.6936 3H11.3064C10.477 3 10.0624 3 9.70951 3.13878C9.39792 3.26132 9.12208 3.46013 8.90729 3.71698C8.66405 4.00784 8.53292 4.40125 8.27064 5.18807L8 6M18 6V16.2C18 17.8802 18 18.7202 17.673 19.362C17.3854 19.9265 16.9265 20.3854 16.362 20.673C15.7202 21 14.8802 21 13.2 21H10.8C9.11984 21 8.27976 21 7.63803 20.673C7.07354 20.3854 6.6146 19.9265 6.32698 19.362C6 18.7202 6 17.8802 6 16.2V6M14 10V17M10 10V17" stroke="#436e60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> ' + t('leaveList') + '</button>') +
+            : '<button class="dropdown-item danger" onclick="confirmLeaveList(\'' + list.id + '\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15M10 17L15 12M15 12L10 7M15 12H3" stroke="#436e60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> ' + t('leaveList') + '</button>') +
         '</div>' +
       '</div>' +
     '</div>';
@@ -122,18 +116,13 @@ window.goToList = function(id) {
 }
 
 window.toggleCardMenu = function(menuId) {
-  document.querySelectorAll('.dropdown-menu').forEach(function(m) {
-    if (m.id !== menuId) m.classList.add('hidden');
-  });
+  document.querySelectorAll('.dropdown-menu').forEach(function(m) { if (m.id !== menuId) m.classList.add('hidden'); });
   var menu = document.getElementById(menuId);
   if (!menu) return;
   menu.classList.toggle('hidden');
   if (!menu.classList.contains('hidden')) {
     setTimeout(function() {
-      document.addEventListener('click', function handler() {
-        menu.classList.add('hidden');
-        document.removeEventListener('click', handler);
-      });
+      document.addEventListener('click', function handler() { menu.classList.add('hidden'); document.removeEventListener('click', handler); });
     }, 0);
   }
 }
@@ -144,7 +133,6 @@ window.openNewList = function() {
   setTimeout(function(){ document.getElementById('new-list-name').focus(); }, 100);
   applyTranslations();
 }
-
 window.closeNewList = function() { document.getElementById('modal-new-list').classList.add('hidden'); }
 
 window.createList = function() {
@@ -152,15 +140,12 @@ window.createList = function() {
   if (!name) return;
   var btn = document.getElementById('btn-create');
   var span = btn.querySelector('span');
-  btn.disabled = true;
-  span.textContent = t('creating');
+  btn.disabled = true; span.textContent = t('creating');
   var nextOrder = document.querySelectorAll('.list-card').length;
   db.from('lists').insert({ name: name, owner_id: currentUser.id, sort_order: nextOrder }).select().single().then(function(res) {
-    btn.disabled = false;
-    span.textContent = t('createList');
+    btn.disabled = false; span.textContent = t('createList');
     if (res.error) { showToast(t('errorGeneral'), 'error'); return; }
-    closeNewList();
-    goToList(res.data.id);
+    closeNewList(); goToList(res.data.id);
   });
 }
 
@@ -170,13 +155,11 @@ window.openRename = function(id, currentName) {
   document.getElementById('modal-rename').classList.remove('hidden');
   setTimeout(function(){ document.getElementById('rename-input').focus(); }, 100);
 }
-
 window.confirmRename = function() {
   var name = document.getElementById('rename-input').value.trim();
   if (!name || !activeListId) return;
   db.from('lists').update({ name: name }).eq('id', activeListId).then(function() {
-    document.getElementById('modal-rename').classList.add('hidden');
-    loadLists();
+    document.getElementById('modal-rename').classList.add('hidden'); loadLists();
   });
 }
 
@@ -187,17 +170,14 @@ window.openInvite = function(id) {
   document.getElementById('modal-invite').classList.remove('hidden');
   setTimeout(function(){ document.getElementById('invite-email-input').focus(); }, 100);
 }
-
 window.sendInvite = function() {
   var email = document.getElementById('invite-email-input').value.trim().toLowerCase();
   if (!email || !email.includes('@')) return;
   var btn = document.getElementById('btn-send-invite');
   var span = btn.querySelector('span');
-  btn.disabled = true;
-  span.textContent = t('sending');
+  btn.disabled = true; span.textContent = t('sending');
   db.from('invitations').insert({ list_id: activeListId, invited_by: currentUser.id, invited_email: email }).then(function(res) {
-    btn.disabled = false;
-    span.textContent = t('sendInvite');
+    btn.disabled = false; span.textContent = t('sendInvite');
     if (res.error) { showToast(t('errorGeneral'), 'error'); return; }
     document.getElementById('modal-invite').classList.add('hidden');
     showToast(t('inviteSent'), 'success');
@@ -216,23 +196,28 @@ window.duplicateList = function(id) {
             return { list_id: res2.data.id, name: i.name, quantity: i.quantity, category_id: i.category_id, added_by: currentUser.id };
           });
           db.from('items').insert(newItems).then(function(){ loadLists(); showToast('✓', 'success'); });
-        } else {
-          loadLists(); showToast('✓', 'success');
-        }
+        } else { loadLists(); showToast('✓', 'success'); }
       });
     });
   });
 }
 
+// SOFT DELETE — manda a papelera en vez de borrar
 window.confirmDeleteList = function(id) {
   window.activeListId = id;
   document.getElementById('confirm-title').textContent = t('deleteList');
-  document.getElementById('confirm-msg').textContent = t('confirmDelete');
+  document.getElementById('confirm-msg').textContent = currentLang === 'es'
+    ? '¿Mover esta lista a la papelera?'
+    : 'Move this list to trash?';
   document.getElementById('btn-confirm-ok').textContent = t('delete');
   document.getElementById('btn-confirm-ok').onclick = function() {
-    db.from('lists').delete().eq('id', activeListId).then(function() {
+    db.from('lists').update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: currentUser.id
+    }).eq('id', activeListId).then(function() {
       document.getElementById('modal-confirm').classList.add('hidden');
       loadLists();
+      showToast(t('sentToTrash'), 'success');
     });
   };
   document.getElementById('modal-confirm').classList.remove('hidden');
@@ -245,20 +230,17 @@ window.confirmLeaveList = function(id) {
   document.getElementById('btn-confirm-ok').textContent = t('yes');
   document.getElementById('btn-confirm-ok').onclick = function() {
     db.from('list_members').delete().eq('list_id', activeListId).eq('user_id', currentUser.id).then(function() {
-      document.getElementById('modal-confirm').classList.add('hidden');
-      loadLists();
+      document.getElementById('modal-confirm').classList.add('hidden'); loadLists();
     });
   };
   document.getElementById('modal-confirm').classList.remove('hidden');
 }
 
 window.loadNotifications = function() {
-  db.from('notifications').select('*').eq('user_id', currentUser.id)
-    .eq('is_read', false)
+  db.from('notifications').select('*').eq('user_id', currentUser.id).eq('is_read', false)
     .order('created_at', { ascending: false }).limit(20).then(function(res) {
     var notifs = res.data || [];
-    var unread = notifs.filter(function(n){ return !n.is_read; }).length;
-    updateNotifBadge(unread);
+    updateNotifBadge(notifs.filter(function(n){ return !n.is_read; }).length);
     var list = document.getElementById('notif-list');
     if (!list) return;
     if (!notifs.length) {
@@ -266,8 +248,7 @@ window.loadNotifications = function() {
       return;
     }
     list.innerHTML = notifs.map(function(n) {
-      var d = n.data || {};
-      var text = '';
+      var d = n.data || {}; var text = '';
       if (n.type === 'invitation_received') text = '<strong>' + esc(d.from_name) + '</strong> ' + t('invitationReceived') + ' <strong>' + esc(d.list_name) + '</strong>';
       else if (n.type === 'invitation_accepted') text = '<strong>' + esc(d.from_name) + '</strong> ' + t('invitationAccepted') + ' <strong>' + esc(d.list_name) + '</strong>';
       else if (n.type === 'invitation_rejected') text = '<strong>' + esc(d.from_name) + '</strong> ' + t('invitationRejected') + ' <strong>' + esc(d.list_name) + '</strong>';
@@ -276,9 +257,7 @@ window.loadNotifications = function() {
         : '';
       return '<div class="notif-item ' + (n.is_read ? '' : 'unread') + '" id="notif-' + n.id + '">' +
         '<div class="notif-text">' + text + '</div>' +
-        '<div class="notif-time">' + timeAgo(n.created_at) + '</div>' +
-        actions +
-        '</div>';
+        '<div class="notif-time">' + timeAgo(n.created_at) + '</div>' + actions + '</div>';
     }).join('');
   });
 }
@@ -287,8 +266,7 @@ window.updateNotifBadge = function(count) {
   ['notif-badge','nav-badge'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
-    el.textContent = count;
-    el.classList.toggle('hidden', count === 0);
+    el.textContent = count; el.classList.toggle('hidden', count === 0);
   });
 }
 
@@ -303,23 +281,16 @@ window.respondInvite = function(invitationId, status, notifId) {
 
 window.subscribeNotifs = function() {
   db.channel('notifs:' + currentUser.id)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + currentUser.id }, function() {
-      loadNotifications();
-    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=eq.' + currentUser.id }, function() { loadNotifications(); })
     .subscribe();
 }
 
-// ── Drag & Drop para reordenar listas ────────
+// Drag & Drop
 var _dragId = null;
-function removePlaceholder() {
-  var ph = document.getElementById('drag-placeholder');
-  if (ph && ph.parentNode) ph.parentNode.removeChild(ph);
-}
+function removePlaceholder() { var ph = document.getElementById('drag-placeholder'); if (ph && ph.parentNode) ph.parentNode.removeChild(ph); }
 function _containerDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  var dragEl = document.getElementById('card-' + _dragId);
-  if (!dragEl) return;
+  e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+  var dragEl = document.getElementById('card-' + _dragId); if (!dragEl) return;
   var allCards = Array.from(document.querySelectorAll('.list-card'));
   var dragIdx = allCards.findIndex(function(c) { return c.id === 'card-' + _dragId; });
   var cards = allCards.filter(function(c) { return c !== dragEl; });
@@ -332,8 +303,7 @@ function _containerDragOver(e) {
   if (insertIdx === dragIdx || insertIdx === dragIdx + 1) { removePlaceholder(); return; }
   var ph = document.getElementById('drag-placeholder');
   if (!ph) {
-    ph = document.createElement('div');
-    ph.id = 'drag-placeholder';
+    ph = document.createElement('div'); ph.id = 'drag-placeholder';
     ph.style.cssText = 'height:' + dragEl.offsetHeight + 'px;margin:0 12px 10px;border-radius:16px;background:rgba(52,176,128,0.12);border:2px dashed #34b080;pointer-events:none;box-sizing:border-box;';
   }
   var parent = dragEl.parentNode;
@@ -344,60 +314,38 @@ function _containerDrop(e) {
   e.preventDefault();
   var container = document.getElementById('page-content');
   if (container) { container.removeEventListener('dragover', _containerDragOver); container.removeEventListener('drop', _containerDrop); }
-  var ph = document.getElementById('drag-placeholder');
-  var dragEl = document.getElementById('card-' + _dragId);
-  if (ph && dragEl && ph.parentNode) { ph.parentNode.insertBefore(dragEl, ph); removePlaceholder(); }
-  else { removePlaceholder(); }
+  var ph = document.getElementById('drag-placeholder'); var dragEl = document.getElementById('card-' + _dragId);
+  if (ph && dragEl && ph.parentNode) { ph.parentNode.insertBefore(dragEl, ph); removePlaceholder(); } else { removePlaceholder(); }
   document.querySelectorAll('.list-card').forEach(function(c) { c.style.transform=''; c.style.opacity=''; });
-  var saveCards = Array.from(document.querySelectorAll('.list-card'));
-  var saveChain = Promise.resolve();
-  saveCards.forEach(function(c, i) {
-    saveChain = saveChain.then(function() {
-      return db.from('lists').update({ sort_order: i * 10 }).eq('id', c.id.replace('card-', ''));
-    });
-  });
+  var saveCards = Array.from(document.querySelectorAll('.list-card')); var saveChain = Promise.resolve();
+  saveCards.forEach(function(c, i) { saveChain = saveChain.then(function() { return db.from('lists').update({ sort_order: i * 10 }).eq('id', c.id.replace('card-', '')); }); });
   _dragId = null;
 }
-
 window.dragStart = function(e, id) {
-  _dragId = id;
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', id);
-  setTimeout(function() {
-    var el = document.getElementById('card-' + id);
-    if (el) { el.style.opacity = '0.25'; el.style.transform = 'scale(0.97)'; }
-  }, 0);
+  _dragId = id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id);
+  setTimeout(function() { var el = document.getElementById('card-' + id); if (el) { el.style.opacity = '0.25'; el.style.transform = 'scale(0.97)'; } }, 0);
   var container = document.getElementById('page-content');
   if (container) { container.addEventListener('dragover', _containerDragOver); container.addEventListener('drop', _containerDrop); }
 };
-
 window.dragEnd = function(e) {
   var container = document.getElementById('page-content');
   if (container) { container.removeEventListener('dragover', _containerDragOver); container.removeEventListener('drop', _containerDrop); }
-  removePlaceholder();
-  document.querySelectorAll('.list-card').forEach(function(c) { c.style.transform=''; c.style.opacity=''; });
-  _dragId = null;
+  removePlaceholder(); document.querySelectorAll('.list-card').forEach(function(c) { c.style.transform=''; c.style.opacity=''; }); _dragId = null;
 };
 
 window.initNotifBtn = function() {
   var btn = document.getElementById('notif-btn');
-  if (!btn || btn._inited) return;
-  btn._inited = true;
+  if (!btn || btn._inited) return; btn._inited = true;
   btn.addEventListener('click', function(e) {
     e.stopPropagation();
-    var panel = document.getElementById('notif-panel');
-    if (!panel) return;
+    var panel = document.getElementById('notif-panel'); if (!panel) return;
     panel.classList.toggle('hidden');
     if (!panel.classList.contains('hidden')) {
       window.loadNotifications();
       setTimeout(function() {
-        db.from('notifications').update({ is_read: true }).eq('user_id', window.currentUser.id).eq('is_read', false).then(function() {
-          window.updateNotifBadge(0);
-        });
+        db.from('notifications').update({ is_read: true }).eq('user_id', window.currentUser.id).eq('is_read', false).then(function() { window.updateNotifBadge(0); });
       }, 1500);
-      setTimeout(function() {
-        document.addEventListener('click', function h() { panel.classList.add('hidden'); document.removeEventListener('click', h); });
-      }, 0);
+      setTimeout(function() { document.addEventListener('click', function h() { panel.classList.add('hidden'); document.removeEventListener('click', h); }); }, 0);
     }
   });
 }
@@ -405,25 +353,15 @@ window.initNotifBtn = function() {
 window.timeAgo = function(dateStr) {
   var lang = localStorage.getItem('lang') || 'es';
   var diff = Date.now() - new Date(dateStr).getTime();
-  var mins = Math.floor(diff / 60000);
-  var hours = Math.floor(diff / 3600000);
-  var days = Math.floor(diff / 86400000);
+  var mins = Math.floor(diff / 60000); var hours = Math.floor(diff / 3600000); var days = Math.floor(diff / 86400000);
   if (lang === 'es') {
-    if (mins < 1) return 'ahora mismo';
-    if (mins < 60) return 'hace ' + mins + ' min';
-    if (hours < 24) return 'hace ' + hours + ' h';
-    return 'hace ' + days + ' d';
+    if (mins < 1) return 'ahora mismo'; if (mins < 60) return 'hace ' + mins + ' min';
+    if (hours < 24) return 'hace ' + hours + ' h'; return 'hace ' + days + ' d';
   } else {
-    if (mins < 1) return 'just now';
-    if (mins < 60) return mins + 'm ago';
-    if (hours < 24) return hours + 'h ago';
-    return days + 'd ago';
+    if (mins < 1) return 'just now'; if (mins < 60) return mins + 'm ago';
+    if (hours < 24) return hours + 'h ago'; return days + 'd ago';
   }
 }
 
-// Auto-start
-if (typeof requireAuth === 'function') {
-  window.startApp();
-} else {
-  window.addEventListener('load', function() { window.startApp(); });
-}
+if (typeof requireAuth === 'function') { window.startApp(); }
+else { window.addEventListener('load', function() { window.startApp(); }); }
