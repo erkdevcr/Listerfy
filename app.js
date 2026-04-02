@@ -46,7 +46,7 @@ window.loadLists = function() {
         Promise.all([
           db.from('items').select('*',{count:'exact',head:true}).eq('list_id', list.id),
           db.from('items').select('*',{count:'exact',head:true}).eq('list_id', list.id).eq('is_checked', true),
-          db.from('list_members').select('user_id, profiles(display_name)').eq('list_id', list.id),
+          db.from('list_members').select('user_id, profiles(display_name, avatar_url)').eq('list_id', list.id),
           db.from('items').select('*',{count:'exact',head:true}).eq('list_id', list.id).eq('item_state', 'completed'),
         ]).then(function(results) {
           var total = results[0].count || 0;

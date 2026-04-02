@@ -68,7 +68,7 @@ window.loadAll = function() {
   return Promise.all([
     db.from('lists').select('*').eq('id', LIST_ID).is('deleted_at', null).single(),
     db.from('categories').select('*').order('is_default', { ascending: false }),
-    db.from('list_members').select('user_id, role, profiles(display_name, email)').eq('list_id', LIST_ID),
+    db.from('list_members').select('user_id, role, profiles(display_name, email, avatar_url)').eq('list_id', LIST_ID),
     db.from('items').select('*, categories(name_es, name_en, icon)').eq('list_id', LIST_ID).order('created_at', { ascending: true })
   ]).then(function(results) {
     var list = results[0].data;
@@ -91,6 +91,8 @@ window.renderTopbar = function() {
   var isOwner = window.listData.owner_id === window.currentUser.id;
   var avatars = window.members.filter(function(m) { return m.user_id !== window.currentUser.id; }).slice(0,5).map(function(m) {
     var name = (m.profiles && m.profiles.display_name) || '?';
+    var url = m.profiles && m.profiles.avatar_url;
+    if (url) return '<div class="avatar avatar-sm" style="background:' + avatarColor(name) + ';overflow:hidden;padding:0"><img src="' + url + '" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.parentNode.innerHTML='' + avatarInitials(name) + ''"></div>';
     return '<div class="avatar avatar-sm" style="background:' + avatarColor(name) + '">' + avatarInitials(name) + '</div>';
   }).join('');
   document.getElementById('topbar-actions').innerHTML =
@@ -423,8 +425,12 @@ window.openMembersModal = function() {
     var h = 0; for (var i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h<<5)-h);
     var color = COLORS[Math.abs(h) % COLORS.length];
     var initials = name.trim().split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)||'?';
+    var url = m.profiles && m.profiles.avatar_url;
+    var avatarHtml = url
+      ? '<div class="avatar" style="background:' + color + ';flex-shrink:0;overflow:hidden;padding:0"><img src="' + url + '" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.parentNode.innerHTML='' + initials + ''"></div>'
+      : '<div class="avatar" style="background:' + color + ';flex-shrink:0">' + initials + '</div>';
     return '<div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border)">' +
-      '<div class="avatar" style="background:' + color + ';flex-shrink:0">' + initials + '</div>' +
+      avatarHtml +
       '<div style="flex:1;min-width:0">' +
         '<div style="font-weight:700;color:var(--text-1);font-size:var(--fs-base)">' + name + (isMe ? ' <span style="font-size:var(--fs-xs);color:var(--brand);font-weight:600">(' + t('you') + ')</span>' : '') + '</div>' +
         '<div style="font-size:var(--fs-sm);color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + email + '</div>' +
