@@ -135,7 +135,7 @@ window.renderPage = function() {
     }
     if (below.length > 0) {
       html += '<div style="display:flex;gap:10px;padding:16px;margin-top:8px">';
-      if (completed.length > 0) html += '<button class="btn btn-outline btn-full" onclick="clearCompleted()">' + t('clearCompleted') + '</button>';
+      if (completed.length > 0) html += '<button class="btn btn-outline btn-full" onclick="document.getElementById(\'modal-clear-completed\').classList.remove(\'hidden\')">' + t('clearCompleted') + '</button>';
       html += '<button class="btn btn-danger btn-full" onclick="document.getElementById(\'modal-clear-all\').classList.remove(\'hidden\')">' + t('clearAll') + '</button>';
       html += '</div>';
     }
