@@ -2,24 +2,24 @@
   "name": "Listerfy",
   "short_name": "Listerfy",
   "description": "Listas de compras compartidas",
-  "start_url": "/Listerfy/app.html",
-  "scope": "/Listerfy/",
+  "start_url": "./app.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1c1c1c",
   "theme_color": "#34b080",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "./icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "./icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ]
 }

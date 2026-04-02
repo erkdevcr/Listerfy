@@ -757,7 +757,7 @@ async function handleLogout() { await db.auth.signOut(); location.href = 'index.
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function() {
-    navigator.serviceWorker.register("/Listerfy/sw.js")
+    navigator.serviceWorker.register("./sw.js")
       .catch(function(e) { console.log("SW error:", e); });
   });
 }
