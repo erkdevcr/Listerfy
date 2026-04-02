@@ -132,14 +132,15 @@ window.renderPage = function() {
       prog.innerHTML = '';
     } else if (checkedOnlyCount === 0) {
       // Solo rojo — derecha redondeada
-      prog.style.cssText = 'display:block;width:' + pct + '%;background:#a84442;border-radius:0 9999px 9999px 0';
+      var _red = document.body.classList.contains('light') ? '#c04848' : '#a84442';
+      prog.style.cssText = 'display:block;width:' + pct + '%;background:' + _red + ';border-radius:0 9999px 9999px 0';
       prog.innerHTML = '';
     } else {
       // Dos segmentos: verde derecha redondeada + rojo ambos lados redondeados
       prog.style.cssText = 'display:flex;width:' + pct + '%;height:100%;background:none;border-radius:0';
       prog.innerHTML =
         '<div style="flex:' + checkedOnlyCount + ';background:var(--brand);border-radius:0 9999px 9999px 0"></div>' +
-        '<div style="flex:' + completed.length + ';background:#a84442;border-radius:9999px"></div>';
+        '<div style="flex:' + completed.length + ';background:' + (document.body.classList.contains('light') ? '#c04848' : '#a84442') + ';border-radius:9999px"></div>';
     }
   }
   var html = '';

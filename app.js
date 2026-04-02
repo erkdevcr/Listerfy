@@ -90,17 +90,20 @@ window.renderLists = function(lists) {
         '<div class="progress-dot"></div>' +
         (function() {
         var checkedOnly = list.checked - list.completedCount;
-        var track = 'style="border-radius:9999px;overflow:hidden"';
+        var _isLight = document.body.classList.contains('light');
+        var _red = _isLight ? '#c04848' : '#a84442';
+        var _trackBg = _isLight ? '#ddd5d5' : '#525252';
+        var track = 'style="border-radius:9999px;overflow:hidden;background:' + _trackBg + '"';
         if (pct === 0) {
           return '<div class="progress-track" ' + track + '><div class="progress-fill" style="display:none"></div></div>';
         } else if (list.completedCount === 0) {
           return '<div class="progress-track" ' + track + '><div class="progress-fill" style="width:' + pct + '%;background:var(--brand);border-radius:0 9999px 9999px 0"></div></div>';
         } else if (checkedOnly === 0) {
-          return '<div class="progress-track" ' + track + '><div class="progress-fill" style="width:' + pct + '%;background:#a84442;border-radius:0 9999px 9999px 0"></div></div>';
+          return '<div class="progress-track" ' + track + '><div class="progress-fill" style="width:' + pct + '%;background:' + _red + ';border-radius:0 9999px 9999px 0"></div></div>';
         } else {
           return '<div class="progress-track" ' + track + '><div class="progress-fill" style="display:flex;width:' + pct + '%;height:100%;background:none;border-radius:0">' +
             '<div style="flex:' + checkedOnly + ';background:var(--brand);border-radius:0 9999px 9999px 0"></div>' +
-            '<div style="flex:' + list.completedCount + ';background:#a84442;border-radius:9999px"></div>' +
+            '<div style="flex:' + list.completedCount + ';background:' + _red + ';border-radius:9999px"></div>' +
             '</div></div>';
         }
       })() +

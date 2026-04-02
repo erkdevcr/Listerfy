@@ -6,6 +6,10 @@
   <title>Listerfy</title>
   <link rel="stylesheet" href="style.css"/>
   <link rel="icon" type="image/svg+xml" href="logo.svg"/>
+  <style>
+    #progress-track-bar { background: #525252; }           /* oscuro: gris más claro */
+    body.light #progress-track-bar { background: #ddd5d5; } /* claro: gris rosado suave */
+  </style>
 </head>
 <body>
 <div class="page">
@@ -17,7 +21,7 @@
   </div>
 
   <!-- Progress bar under topbar -->
-  <div style="height:3px;background:var(--bg-4);border-radius:9999px;overflow:hidden">
+  <div id="progress-track-bar" style="height:3px;border-radius:9999px;overflow:hidden">
     <div id="top-progress" style="height:100%;background:var(--brand);width:0%;transition:width .4s ease"></div>
   </div>
 
