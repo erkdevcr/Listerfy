@@ -17,7 +17,7 @@
   </div>
 
   <!-- Progress bar under topbar -->
-  <div style="height:3px;background:var(--bg-4)">
+  <div style="height:3px;background:var(--bg-4);border-radius:9999px;overflow:hidden">
     <div id="top-progress" style="height:100%;background:var(--brand);width:0%;transition:width .4s ease"></div>
   </div>
 
@@ -126,18 +126,6 @@
 </div>
 
 <!-- Modal: confirm clear all -->
-<div class="modal-overlay hidden centered" id="modal-clear-completed">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" data-i18n="clearCompleted">Limpiar tachados</div>
-    <div class="modal-body"><p style="font-size:var(--fs-sm);color:var(--text-2)" data-i18n="confirmClearCompleted">¿Limpiar todos los tachados?</p></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="document.getElementById('modal-clear-completed').classList.add('hidden')" data-i18n="cancel">Cancelar</button>
-      <button class="btn btn-danger" onclick="document.getElementById('modal-clear-completed').classList.add('hidden');clearCompleted()" data-i18n="yes">Sí, limpiar</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay hidden centered" id="modal-clear-all">
   <div class="modal">
     <div class="modal-handle"></div>

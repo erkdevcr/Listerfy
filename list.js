@@ -127,19 +127,19 @@ window.renderPage = function() {
       prog.style.cssText = 'display:none';
       prog.innerHTML = '';
     } else if (completed.length === 0) {
-      // Solo verde
-      prog.style.cssText = 'display:block;width:' + pct + '%;background:var(--brand)';
+      // Solo verde — derecha redondeada (izquierda la maneja el contenedor)
+      prog.style.cssText = 'display:block;width:' + pct + '%;background:var(--brand);border-radius:0 9999px 9999px 0';
       prog.innerHTML = '';
     } else if (checkedOnlyCount === 0) {
-      // Solo rojo
-      prog.style.cssText = 'display:block;width:' + pct + '%;background:#a84442';
+      // Solo rojo — derecha redondeada
+      prog.style.cssText = 'display:block;width:' + pct + '%;background:#a84442;border-radius:0 9999px 9999px 0';
       prog.innerHTML = '';
     } else {
-      // Dos segmentos: verde + rojo con esquina izquierda redondeada
+      // Dos segmentos: verde derecha redondeada + rojo ambos lados redondeados
       prog.style.cssText = 'display:flex;width:' + pct + '%;height:100%;background:none;border-radius:0';
       prog.innerHTML =
-        '<div style="flex:' + checkedOnlyCount + ';background:var(--brand)"></div>' +
-        '<div style="flex:' + completed.length + ';background:#a84442;border-radius:3px 0 0 3px"></div>';
+        '<div style="flex:' + checkedOnlyCount + ';background:var(--brand);border-radius:0 9999px 9999px 0"></div>' +
+        '<div style="flex:' + completed.length + ';background:#a84442;border-radius:9999px"></div>';
     }
   }
   var html = '';
