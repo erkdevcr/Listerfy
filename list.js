@@ -1,4 +1,20 @@
 // list.js — Listerfy list view
+(function() {
+  var s = document.createElement('style');
+  s.textContent = [
+    '@keyframes item-tap-glow {',
+    '  0%   { background: rgba(52,176,128,0);    box-shadow: inset 0 0 0 0px rgba(52,176,128,0); }',
+    '  40%  { background: rgba(52,176,128,0.13); box-shadow: inset 0 0 0 2px rgba(52,176,128,0.35); }',
+    '  100% { background: rgba(52,176,128,0);    box-shadow: inset 0 0 0 0px rgba(52,176,128,0); }',
+    '}',
+    '.item-row.item-tapping {',
+    '  animation: item-tap-glow 0.22s ease-out forwards;',
+    '  border-radius: 10px;',
+    '}'
+  ].join('');
+  document.head.appendChild(s);
+})();
+
 var LIST_ID = new URLSearchParams(location.search).get('id');
 window.currentUser = null;
 window.categories = [];
@@ -130,11 +146,32 @@ window.cycleState = function(id) {
   var item = window.items.find(function(i) { return i.id === id; }); if (!item) return;
   var state = item.item_state || 'unchecked';
   var next = state === 'unchecked' ? 'checked' : (state === 'checked' ? 'completed' : 'checked');
-  item.item_state = next;
-  window._localChange = true; clearTimeout(window._localChangeTimer);
-  window._localChangeTimer = setTimeout(function() { window._localChange = false; }, 2000);
-  window.renderPage();
-  db.from('items').update({ item_state: next, is_checked: next !== 'unchecked', checked_by: next !== 'unchecked' ? window.currentUser.id : null, checked_at: next !== 'unchecked' ? new Date().toISOString() : null }).eq('id', id).then(function() { window._localChange = false; clearTimeout(window._localChangeTimer); });
+
+  function applyStateChange() {
+    item.item_state = next;
+    window._localChange = true; clearTimeout(window._localChangeTimer);
+    window._localChangeTimer = setTimeout(function() { window._localChange = false; }, 2000);
+    window.renderPage();
+    db.from('items').update({
+      item_state: next,
+      is_checked: next !== 'unchecked',
+      checked_by: next !== 'unchecked' ? window.currentUser.id : null,
+      checked_at: next !== 'unchecked' ? new Date().toISOString() : null
+    }).eq('id', id).then(function() { window._localChange = false; clearTimeout(window._localChangeTimer); });
+  }
+
+  // Solo aplicar efecto visual al tocar ítems azules (unchecked → checked)
+  if (state === 'unchecked') {
+    var row = document.getElementById('row-' + id);
+    if (row) {
+      row.classList.remove('item-tapping');
+      void row.offsetWidth; // forzar reflow para reiniciar animación
+      row.classList.add('item-tapping');
+    }
+    setTimeout(applyStateChange, 200);
+  } else {
+    applyStateChange();
+  }
 };
 
 window.closeAddPanel = function() { document.getElementById('add-panel').classList.add('hidden'); document.getElementById('add-pill').classList.remove('hidden'); };
