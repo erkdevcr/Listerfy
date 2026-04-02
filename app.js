@@ -96,10 +96,10 @@ window.renderLists = function(lists) {
         } else if (list.completedCount === 0) {
           fillStyle += 'background:var(--brand);';
         } else if (checkedOnly === 0) {
-          fillStyle += 'background:#ef4444;';
+          fillStyle += 'background:#c0504d;';
         } else {
           var gp = Math.round(checkedOnly / list.checked * 100);
-          fillStyle += 'background:linear-gradient(to right,var(--brand) ' + gp + '%,#ef4444 ' + gp + '%);';
+          fillStyle += 'background:linear-gradient(to right,var(--brand) ' + gp + '%,#c0504d ' + gp + '%);';
         }
         return '<div class="progress-track"><div class="progress-fill" style="' + fillStyle + '"></div></div>';
       })() +

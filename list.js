@@ -132,11 +132,11 @@ window.renderPage = function() {
         prog.style.background = 'var(--brand)';
       } else if (checkedOnlyCount === 0) {
         // Solo rojos
-        prog.style.background = '#ef4444';
+        prog.style.background = '#c0504d';
       } else {
         // Verde al inicio, rojo al final
         var greenPct = Math.round(checkedOnlyCount / below.length * 100);
-        prog.style.background = 'linear-gradient(to right, var(--brand) ' + greenPct + '%, #ef4444 ' + greenPct + '%)';
+        prog.style.background = 'linear-gradient(to right, var(--brand) ' + greenPct + '%, #c0504d ' + greenPct + '%)';
       }
     }
   }
