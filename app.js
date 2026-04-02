@@ -91,8 +91,8 @@ window.renderLists = function(lists) {
         (function() {
         var checkedOnly = list.checked - list.completedCount;
         var _isLight = document.body.classList.contains('light');
-        var _red = _isLight ? '#c04848' : '#a84442';
-        var _trackBg = _isLight ? '#ddd5d5' : '#525252';
+        var _red = _isLight ? '#c43535' : '#a84442';
+        var _trackBg = _isLight ? '#ede8e8' : '#404040';
         var track = 'style="border-radius:9999px;overflow:hidden;background:' + _trackBg + '"';
         if (pct === 0) {
           return '<div class="progress-track" ' + track + '><div class="progress-fill" style="display:none"></div></div>';

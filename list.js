@@ -132,7 +132,7 @@ window.renderPage = function() {
       prog.innerHTML = '';
     } else if (checkedOnlyCount === 0) {
       // Solo rojo — derecha redondeada
-      var _red = document.body.classList.contains('light') ? '#c04848' : '#a84442';
+      var _red = document.body.classList.contains('light') ? '#c43535' : '#a84442';
       prog.style.cssText = 'display:block;width:' + pct + '%;background:' + _red + ';border-radius:0 9999px 9999px 0';
       prog.innerHTML = '';
     } else {
@@ -140,7 +140,7 @@ window.renderPage = function() {
       prog.style.cssText = 'display:flex;width:' + pct + '%;height:100%;background:none;border-radius:0';
       prog.innerHTML =
         '<div style="flex:' + checkedOnlyCount + ';background:var(--brand);border-radius:0 9999px 9999px 0"></div>' +
-        '<div style="flex:' + completed.length + ';background:' + (document.body.classList.contains('light') ? '#c04848' : '#a84442') + ';border-radius:9999px"></div>';
+        '<div style="flex:' + completed.length + ';background:' + (document.body.classList.contains('light') ? '#c43535' : '#a84442') + ';border-radius:9999px"></div>';
     }
   }
   var html = '';
