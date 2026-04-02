@@ -86,7 +86,7 @@ window.renderLists = function(lists) {
       '<div class="list-card-name">' + esc(list.name) + '</div>' +
       '<div class="list-card-progress">' +
         '<div class="progress-dot"></div>' +
-        '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+        '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%;' + (pct === 0 ? 'display:none' : '') + '"></div></div>' +
         '<span class="progress-count">' + list.checked + '/' + list.total + '</span>' +
       '</div>' +
       '<div class="list-card-footer">' +
