@@ -1,26 +1,30 @@
 // list.js — Listerfy list view
 (function() {
+  // Logo SVG como CSS mask — se define UNA vez, el navegador lo aplica via CSS
+  // sin repetir el path en cada ítem del DOM (100+ ítems no afectan el rendimiento)
+  var logoSVG = '<svg viewBox="0 0 377.87 347.58" xmlns="http://www.w3.org/2000/svg">' +
+    '<path d="M154.2,211.57c-35.21-34.4-68.39-71.02-103.88-105.16l96.8,173.21c5.26,9.01,' +
+    '18.37,10.12,25.07,2.13L377.87,9.71c-.29,2.45-1.62,4.98-2.6,7.27-12.8,30.03-27.84,' +
+    '59.22-40.8,89.19,28.97,70.14,9.77,151.17-47.84,200.13-82.99,70.53-209.83,47.79,' +
+    '-263.68-46.2C-24.9,176.57,4.67,70.26,87.56,22.79,163.68-20.82,262.52-.2,313.73,' +
+    '70.67l-154.51,144.37c-2.46,1.18-3.6-2.07-5.03-3.47Z"/></svg>';
+  var lm = 'url("data:image/svg+xml,' + encodeURIComponent(logoSVG) + '") center/78% no-repeat';
   var s = document.createElement('style');
-  s.textContent = [
-    '@keyframes item-tap-glow {',
-    '  0%   { background: rgba(52,176,128,0);    box-shadow: inset 0 0 0 0px rgba(52,176,128,0); }',
-    '  40%  { background: rgba(52,176,128,0.13); box-shadow: inset 0 0 0 2px rgba(52,176,128,0.35); }',
-    '  100% { background: rgba(52,176,128,0);    box-shadow: inset 0 0 0 0px rgba(52,176,128,0); }',
-    '}',
-    '@keyframes item-tap-glow-red {',
-    '  0%   { background: rgba(239,68,68,0);    box-shadow: inset 0 0 0 0px rgba(239,68,68,0); }',
-    '  40%  { background: rgba(239,68,68,0.11); box-shadow: inset 0 0 0 2px rgba(239,68,68,0.28); }',
-    '  100% { background: rgba(239,68,68,0);    box-shadow: inset 0 0 0 0px rgba(239,68,68,0); }',
-    '}',
-    '.item-row.item-tapping {',
-    '  animation: item-tap-glow 0.22s ease-out forwards;',
-    '  border-radius: 10px;',
-    '}',
-    '.item-row.item-tapping-red {',
-    '  animation: item-tap-glow-red 0.22s ease-out forwards;',
-    '  border-radius: 10px;',
-    '}'
-  ].join('');
+  s.textContent =
+    '@keyframes item-tap-glow{0%{background:rgba(52,176,128,0);box-shadow:inset 0 0 0 0px rgba(52,176,128,0)}' +
+    '40%{background:rgba(52,176,128,0.13);box-shadow:inset 0 0 0 2px rgba(52,176,128,0.35)}' +
+    '100%{background:rgba(52,176,128,0);box-shadow:inset 0 0 0 0px rgba(52,176,128,0)}}' +
+    '@keyframes item-tap-glow-red{0%{background:rgba(239,68,68,0);box-shadow:inset 0 0 0 0px rgba(239,68,68,0)}' +
+    '40%{background:rgba(239,68,68,0.11);box-shadow:inset 0 0 0 2px rgba(239,68,68,0.28)}' +
+    '100%{background:rgba(239,68,68,0);box-shadow:inset 0 0 0 0px rgba(239,68,68,0)}}' +
+    '.item-row.item-tapping{animation:item-tap-glow 0.22s ease-out forwards;border-radius:10px}' +
+    '.item-row.item-tapping-red{animation:item-tap-glow-red 0.22s ease-out forwards;border-radius:10px}' +
+    // Checked (verde): logo verde
+    '.item-circle.state-checked{background-color:var(--brand);border-color:transparent;' +
+    '-webkit-mask:' + lm + ';mask:' + lm + '}' +
+    // Completed (rojo): logo rojo
+    '.item-circle.state-completed{background-color:#ef4444;border-color:transparent;' +
+    '-webkit-mask:' + lm + ';mask:' + lm + '}';
   document.head.appendChild(s);
 })();
 
@@ -136,7 +140,7 @@ window.renderPage = function() {
 window.renderItem = function(item) {
   var state = item.item_state || 'unchecked';
   var catIcon = (item.categories && item.categories.icon) ? item.categories.icon : '🛒';
-  var circleClass = (state === 'checked' || state === 'completed') ? 'state-checked' : '';
+  var circleClass = state === 'completed' ? 'state-completed' : (state === 'checked' ? 'state-checked' : '');
   var nameStyle = 'cursor:pointer;';
   if (state === 'completed') nameStyle += 'text-decoration:line-through;text-decoration-color:#ef4444;text-decoration-thickness:2px;color:var(--completed-text);';
   return '<div class="item-row" id="row-' + item.id + '"' +
