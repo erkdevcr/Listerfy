@@ -8,56 +8,107 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg"/>
   <style>
     .profile-avatar-wrap {
-      display: flex; flex-direction: column; align-items: center;
-      padding: 28px 16px 16px; gap: 10px;
+      display:flex;flex-direction:column;align-items:center;padding:28px 16px 16px;gap:10px;
     }
     .profile-avatar-big {
-      width: 72px; height: 72px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.6rem; font-weight: 800; color: #fff;
-      overflow: hidden;
+      width:72px;height:72px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.6rem;font-weight:800;color:#fff;overflow:hidden;
     }
-    .profile-avatar-big img {
-      width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;
-    }
-    .avatar-upload-wrap {
-      position: relative; display: inline-block; cursor: pointer;
-    }
+    .profile-avatar-big img { width:100%;height:100%;object-fit:cover;border-radius:50%;display:block; }
+    .avatar-upload-wrap { position:relative;display:inline-block;cursor:pointer; }
     .avatar-camera-badge {
-      position: absolute; bottom: 1px; right: 1px;
-      width: 22px; height: 22px;
-      background: var(--brand);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      border: 2px solid var(--bg);
+      position:absolute;bottom:1px;right:1px;
+      width:22px;height:22px;background:var(--brand);border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      border:2px solid var(--bg);
     }
-    .avatar-loading { opacity: 0.45; transition: opacity .2s; }
-    .profile-name-big { font-size: var(--fs-xl); font-weight: 800; }
-    .profile-email-big { font-size: var(--fs-sm); color: var(--text-3); }
-    /* Nav tabs: activo verde, inactivo gris */
-    .nav-tab { color: var(--text-3) !important; }
-    .nav-tab .nav-icon svg { fill: var(--text-3) !important; color: var(--text-3) !important; }
-    .nav-tab.active { color: var(--brand) !important; }
-    .nav-tab.active .nav-icon svg { fill: var(--brand) !important; color: var(--brand) !important; }
-    #del-confirm-word {
-      font-weight: 800; color: #ef4444;
-      font-family: monospace;
-      background: rgba(239,68,68,.12);
-      padding: 2px 8px; border-radius: 4px;
+    .avatar-loading { opacity:.4;transition:opacity .2s; }
+    .profile-name-big { font-size:var(--fs-xl);font-weight:800; }
+    .profile-email-big { font-size:var(--fs-sm);color:var(--text-3); }
+
+    /* Nav tabs */
+    .nav-tab { color:var(--text-3) !important; }
+    .nav-tab .nav-icon svg { fill:var(--text-3) !important;color:var(--text-3) !important; }
+    .nav-tab.active { color:var(--brand) !important; }
+    .nav-tab.active .nav-icon svg { fill:var(--brand) !important;color:var(--brand) !important; }
+
+    /* Delete account */
+    #del-confirm-word { font-weight:800;color:#ef4444;font-family:monospace;background:rgba(239,68,68,.12);padding:2px 8px;border-radius:4px; }
+    @keyframes shake { 0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)} }
+    .shake { animation:shake .3s ease; }
+
+    /* ── Avatar options modal ── */
+    #modal-avatar-opts .modal-body { padding:0; }
+    .avatar-opt-btn {
+      display:flex;align-items:center;gap:14px;
+      width:100%;padding:16px 20px;
+      background:none;border:none;border-bottom:1px solid var(--border);
+      font-size:var(--fs-base);font-weight:600;color:var(--text-1);
+      cursor:pointer;text-align:left;
+      -webkit-tap-highlight-color:transparent;
     }
-    @keyframes shake {
-      0%,100% { transform: translateX(0); }
-      25% { transform: translateX(-8px); }
-      75% { transform: translateX(8px); }
+    .avatar-opt-btn:last-child { border-bottom:none; }
+    .avatar-opt-btn.danger { color:#ef4444; }
+    .avatar-opt-btn svg { flex-shrink:0; }
+
+    /* ── Camera modal ── */
+    #modal-camera {
+      position:fixed;inset:0;z-index:300;background:#000;
+      display:flex;flex-direction:column;
     }
-    .shake { animation: shake .3s ease; }
+    #modal-camera.hidden { display:none; }
+    #camera-video { flex:1;width:100%;object-fit:cover; }
+    .camera-controls {
+      position:absolute;bottom:0;left:0;right:0;
+      padding:24px 24px calc(24px + env(safe-area-inset-bottom));
+      display:flex;align-items:center;justify-content:space-between;
+      background:linear-gradient(transparent,rgba(0,0,0,0.7));
+    }
+    .camera-btn-close {
+      width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);
+      border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    }
+    .camera-btn-capture {
+      width:68px;height:68px;border-radius:50%;
+      background:#fff;border:4px solid rgba(255,255,255,.6);
+      cursor:pointer;flex-shrink:0;
+    }
+    .camera-btn-flip {
+      width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);
+      border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    }
+    .camera-permission-msg {
+      color:#fff;font-size:var(--fs-sm);text-align:center;padding:24px;margin:auto;
+    }
+
+    /* ── Editor modal ── */
+    #modal-editor .modal { max-width:360px;padding:0;overflow:hidden; }
+    #modal-editor .modal-header {
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 16px;border-bottom:1px solid var(--border);
+    }
+    #modal-editor .modal-header h3 { font-size:var(--fs-base);font-weight:700; }
+    #editor-canvas {
+      display:block;margin:0 auto;
+      touch-action:none;cursor:grab;
+      border-radius:0;
+    }
+    #editor-canvas:active { cursor:grabbing; }
+    .editor-hint {
+      text-align:center;font-size:var(--fs-xs);color:var(--text-3);
+      padding:8px 16px 0;
+    }
+    .editor-footer {
+      display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--border);
+    }
   </style>
   <style>
     @keyframes spinner-breathe {
-      0%, 100% { transform: scale(1);     opacity: 0.7; }
-      50%       { transform: scale(1.09); opacity: 1;   }
+      0%,100%{transform:scale(1);opacity:.7}
+      50%{transform:scale(1.09);opacity:1}
     }
-    .spinner-brand svg { animation: spinner-breathe 0.9s ease-in-out infinite; }
+    .spinner-brand svg { animation:spinner-breathe .9s ease-in-out infinite; }
   </style>
 </head>
 <body>
@@ -80,14 +131,77 @@
   </nav>
 </div>
 
+<!-- ── Modal: avatar options ── -->
+<div class="modal-overlay hidden centered" id="modal-avatar-opts">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="avatar-opts-title">Foto de perfil</div>
+    <div class="modal-body">
+      <button class="avatar-opt-btn" onclick="startCamera()">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"><path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 3H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="#34b080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 17C14.2091 17 16 15.2091 16 13C16 10.7909 14.2091 9 12 9C9.79086 9 8 10.7909 8 13C8 15.2091 9.79086 17 12 17Z" stroke="#34b080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="opt-take-photo">Tomar foto</span>
+      </button>
+      <button class="avatar-opt-btn" onclick="openGallery()">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="#34b080" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.5" stroke="#34b080" stroke-width="2"/><polyline points="21 15 16 10 5 21" stroke="#34b080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="opt-upload-img">Subir imagen</span>
+      </button>
+      <button class="avatar-opt-btn danger" id="btn-remove-avatar" onclick="removeAvatar()" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22"><path d="M3 6H5H21" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6L18 20C18 20.5304 17.7893 21.0391 17.4142 21.4142C17.0391 21.7893 16.5304 22 16 22H8C7.46957 22 6.96086 21.7893 6.58579 21.4142C6.21071 21.0391 6 20.5304 6 20L5 6H19Z" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="opt-remove-photo">Eliminar foto</span>
+      </button>
+      <button class="avatar-opt-btn" onclick="closeAvatarOpts()" style="color:var(--text-3)">
+        <span id="opt-cancel" style="margin-left:36px">Cancelar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Camera modal ── -->
+<div id="modal-camera" class="hidden">
+  <video id="camera-video" autoplay playsinline muted></video>
+  <div class="camera-controls">
+    <button class="camera-btn-close" onclick="closeCamera()">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M18 6L6 18M6 6L18 18" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>
+    </button>
+    <button class="camera-btn-capture" id="btn-capture" onclick="capturePhoto()"></button>
+    <button class="camera-btn-flip" onclick="flipCamera()">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M1 4V10H7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 20V14H17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.49 9C19.9828 7.56678 19.1209 6.28521 17.9845 5.27543C16.8482 4.26565 15.4745 3.55986 13.9917 3.22426C12.5089 2.88865 10.9652 2.93434 9.50481 3.35677C8.04437 3.77921 6.71475 4.56471 5.64 5.64L1 10M23 14L18.36 18.36C17.2853 19.4353 15.9556 20.2208 14.4952 20.6432C13.0348 21.0657 11.4911 21.1114 10.0083 20.7757C8.52547 20.4401 7.1518 19.7344 6.01547 18.7246C4.87913 17.7148 4.01717 16.4332 3.51 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+  <div id="camera-error" class="camera-permission-msg" style="display:none"></div>
+</div>
+
+<!-- ── Editor modal ── -->
+<div class="modal-overlay hidden centered" id="modal-editor">
+  <div class="modal" style="padding:0;overflow:hidden;width:min(360px, 96vw)">
+    <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)">
+      <h3 style="font-size:var(--fs-base);font-weight:700;margin:0" id="editor-title">Ajustar foto</h3>
+      <button onclick="closeEditor()" style="background:none;border:none;color:var(--text-3);cursor:pointer;padding:4px">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div style="background:#000;display:flex;align-items:center;justify-content:center;padding:16px">
+      <canvas id="editor-canvas" width="280" height="280" style="border-radius:50%;display:block"></canvas>
+    </div>
+    <p id="editor-hint" class="editor-hint" style="text-align:center;font-size:var(--fs-xs);color:var(--text-3);padding:8px 16px 0">
+      Arrastra · Pellizca para zoom · Rota con dos dedos
+    </p>
+    <div style="display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--border);margin-top:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="closeEditor()" id="btn-editor-cancel">Cancelar</button>
+      <button class="btn btn-brand" style="flex:1" onclick="saveAvatarFromEditor()" id="btn-editor-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden file input for gallery -->
+<input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="handleFileSelect(event)">
+
 <!-- Modal: edit field -->
 <div class="modal-overlay hidden centered" id="modal-edit-field">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="field-modal-title"></div>
-    <div class="modal-body">
-      <div class="input-group" id="field-inputs"></div>
-    </div>
+    <div class="modal-body"><div class="input-group" id="field-inputs"></div></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="document.getElementById('modal-edit-field').classList.add('hidden')" data-i18n="cancel">Cancelar</button>
       <button class="btn btn-brand" id="btn-save-field" onclick="saveField()"><span data-i18n="save">Guardar</span></button>
@@ -104,8 +218,7 @@
       <p id="del-modal-desc" style="font-size:var(--fs-sm);color:var(--text-2);line-height:1.5;margin-bottom:4px"></p>
       <div id="del-step2" style="display:none;margin-top:12px">
         <p id="del-modal-prompt" style="font-size:var(--fs-sm);color:var(--text-2);margin-bottom:10px"></p>
-        <input class="input" type="text" id="del-confirm-input"
-          autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+        <input class="input" type="text" id="del-confirm-input" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
           oninput="document.getElementById('btn-del-ok').disabled=false"
           onkeydown="if(event.key==='Enter') delNextStep()"/>
       </div>
@@ -122,262 +235,517 @@
 <script src="i18n.js"></script>
 <script src="supabase.js"></script>
 <script>
-  const AVATAR_COLORS = ['#16a34a','#0284c7','#7c3aed','#db2777','#ea580c','#0891b2','#65a30d','#d97706'];
-  function avatarColor(s='') { let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length]; }
-  function avatarInitials(n='') { return n.trim().split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?'; }
-  var currentUser=null, currentProfile=null, activeField=null, _delStep=0;
+const AVATAR_COLORS = ['#16a34a','#0284c7','#7c3aed','#db2777','#ea580c','#0891b2','#65a30d','#d97706'];
+function avatarColor(s='') { let h=0; for(let i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length]; }
+function avatarInitials(n='') { return n.trim().split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||'?'; }
+function esc(s='') { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-  window.addEventListener('load', function() {
-    requireAuth().then(function(user) {
-      if (!user) return;
-      currentUser = user;
-      db.from('profiles').select('*').eq('id', user.id).single().then(function(res) {
-        currentProfile = res.data;
-        applyTranslations();
-        renderProfile();
-      });
+var currentUser=null, currentProfile=null, activeField=null, _delStep=0;
+
+window.addEventListener('load', function() {
+  requireAuth().then(function(user) {
+    if (!user) return;
+    currentUser = user;
+    db.from('profiles').select('*').eq('id', user.id).single().then(function(res) {
+      currentProfile = res.data;
+      applyTranslations();
+      renderProfile();
     });
   });
+});
 
-  function renderProfile() {
-    const name = currentProfile?.display_name || '';
-    const email = currentUser.email || '';
-    const theme = localStorage.getItem('theme') || 'dark';
-    const lang = currentLang;
-    const fs = localStorage.getItem('fontSize') || 'normal';
-    const avatarUrl = currentProfile?.avatar_url || '';
+// ── Render profile ─────────────────────────────────────────────────
+function renderProfile() {
+  const name = currentProfile?.display_name || '';
+  const email = currentUser.email || '';
+  const theme = localStorage.getItem('theme') || 'dark';
+  const lang = currentLang;
+  const fs = localStorage.getItem('fontSize') || 'normal';
+  const avatarUrl = currentProfile?.avatar_url || '';
 
-    const avatarInner = avatarUrl
-      ? `<img src="${avatarUrl}" onerror="this.style.display='none'">`
-      : avatarInitials(name);
+  const avatarInner = avatarUrl
+    ? `<img src="${avatarUrl}" onerror="this.style.display='none'">`
+    : avatarInitials(name);
 
-    const trashSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18"><path d="M4 6H20M16 6L15.7294 5.18807C15.4671 4.40125 15.3359 4.00784 15.0927 3.71698C14.8779 3.46013 14.6021 3.26132 14.2905 3.13878C13.9376 3 13.523 3 12.6936 3H11.3064C10.477 3 10.0624 3 9.70951 3.13878C9.39792 3.26132 9.12208 3.46013 8.90729 3.71698C8.66405 4.00784 8.53292 4.40125 8.27064 5.18807L8 6M18 6V16.2C18 17.8802 18 18.7202 17.673 19.362C17.3854 19.9265 16.9265 20.3854 16.362 20.673C15.7202 21 14.8802 21 13.2 21H10.8C9.11984 21 8.27976 21 7.63803 20.673C7.07354 20.3854 6.6146 19.9265 6.32698 19.362C6 18.7202 6 17.8802 6 16.2V6M14 10V17M10 10V17" stroke="var(--text-2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    const chevronSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M9 18L15 12L9 6" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const trashSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18"><path d="M4 6H20M16 6L15.7294 5.18807C15.4671 4.40125 15.3359 4.00784 15.0927 3.71698C14.8779 3.46013 14.6021 3.26132 14.2905 3.13878C13.9376 3 13.523 3 12.6936 3H11.3064C10.477 3 10.0624 3 9.70951 3.13878C9.39792 3.26132 9.12208 3.46013 8.90729 3.71698C8.66405 4.00784 8.53292 4.40125 8.27064 5.18807L8 6M18 6V16.2C18 17.8802 18 18.7202 17.673 19.362C17.3854 19.9265 16.9265 20.3854 16.362 20.673C15.7202 21 14.8802 21 13.2 21H10.8C9.11984 21 8.27976 21 7.63803 20.673C7.07354 20.3854 6.6146 19.9265 6.32698 19.362C6 18.7202 6 17.8802 6 16.2V6M14 10V17M10 10V17" stroke="var(--text-2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const chevronSVG = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M9 18L15 12L9 6" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-    document.getElementById('page-content').innerHTML = `
-      <div class="profile-avatar-wrap">
-        <div class="avatar-upload-wrap" onclick="document.getElementById('avatar-file-input').click()">
-          <div id="profile-avatar-circle" class="profile-avatar-big" style="background:${avatarColor(name)}">
-            ${avatarInner}
-          </div>
-          <div class="avatar-camera-badge">
-            <svg viewBox="0 0 24 24" fill="white" width="11" height="11">
-              <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4z"/>
-              <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
-            </svg>
-          </div>
-          <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="uploadAvatar(event)">
-        </div>
-        <div class="profile-name-big">${esc(name)}</div>
-        <div class="profile-email-big">${esc(email)}</div>
-      </div>
-
-      <div class="profile-section">
-        <div class="profile-section-title">${t('account')}</div>
-        <div class="profile-row" onclick="openField('name')">
-          <span class="profile-row-label">${t('changeName')}</span>
-          <span class="profile-row-value">${esc(name)} ›</span>
-        </div>
-        <div class="profile-row" onclick="openField('email')">
-          <span class="profile-row-label">${t('changeEmail')}</span>
-          <span class="profile-row-value">${esc(email)} ›</span>
-        </div>
-        <div class="profile-row" onclick="openField('password')">
-          <span class="profile-row-label">${t('changePassword')}</span>
-          <span class="profile-row-value">••••••• ›</span>
-        </div>
-        <div class="profile-row" onclick="location.href='trash.html'" style="cursor:pointer">
-          <span class="profile-row-label" style="display:flex;align-items:center;gap:8px">
-            ${trashSVG} ${t('trash')}
-          </span>
-          <span style="color:var(--text-3);display:flex;align-items:center">${chevronSVG}</span>
+  document.getElementById('page-content').innerHTML = `
+    <div class="profile-avatar-wrap">
+      <div class="avatar-upload-wrap" onclick="showAvatarOptions()">
+        <div id="profile-avatar-circle" class="profile-avatar-big" style="background:${avatarColor(name)}">${avatarInner}</div>
+        <div class="avatar-camera-badge">
+          <svg viewBox="0 0 24 24" fill="white" width="11" height="11">
+            <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4z"/>
+            <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+          </svg>
         </div>
       </div>
+      <div class="profile-name-big">${esc(name)}</div>
+      <div class="profile-email-big">${esc(email)}</div>
+    </div>
 
-      <div class="profile-section">
-        <div class="profile-section-title">${t('preferences')}</div>
-        <div class="profile-row" style="cursor:default">
-          <span class="profile-row-label">${t('darkMode')}</span>
-          <label class="toggle">
-            <input type="checkbox" id="toggle-theme" ${theme==='dark'?'checked':''} onchange="toggleTheme(this.checked)"/>
-            <div class="toggle-track"></div>
-          </label>
-        </div>
-        <div class="profile-row" style="cursor:default">
-          <span class="profile-row-label">${t('language')}</span>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-sm ${lang==='es'?'btn-brand':'btn-outline'}" onclick="changeLang('es')">ES</button>
-            <button class="btn btn-sm ${lang==='en'?'btn-brand':'btn-outline'}" onclick="changeLang('en')">EN</button>
-          </div>
-        </div>
-        <div class="profile-row" style="cursor:default;flex-direction:column;align-items:flex-start;gap:10px">
-          <span class="profile-row-label">${t('fontSize')}</span>
-          <div class="font-size-opts w-full">
-            <button class="font-size-opt ${fs==='xs'?'active':''}" onclick="setFontSize('xs')">${t('fontXS')}</button>
-            <button class="font-size-opt ${fs==='small'?'active':''}" onclick="setFontSize('small')">${t('fontSmall')}</button>
-            <button class="font-size-opt ${fs==='normal'?'active':''}" onclick="setFontSize('normal')">${t('fontNormal')}</button>
-            <button class="font-size-opt ${fs==='large'?'active':''}" onclick="setFontSize('large')">${t('fontLarge')}</button>
-            <button class="font-size-opt ${fs==='xl'?'active':''}" onclick="setFontSize('xl')">${t('fontXL')}</button>
-          </div>
+    <div class="profile-section">
+      <div class="profile-section-title">${t('account')}</div>
+      <div class="profile-row" onclick="openField('name')">
+        <span class="profile-row-label">${t('changeName')}</span>
+        <span class="profile-row-value">${esc(name)} ›</span>
+      </div>
+      <div class="profile-row" onclick="openField('email')">
+        <span class="profile-row-label">${t('changeEmail')}</span>
+        <span class="profile-row-value">${esc(email)} ›</span>
+      </div>
+      <div class="profile-row" onclick="openField('password')">
+        <span class="profile-row-label">${t('changePassword')}</span>
+        <span class="profile-row-value">••••••• ›</span>
+      </div>
+      <div class="profile-row" onclick="location.href='trash.html'" style="cursor:pointer">
+        <span class="profile-row-label" style="display:flex;align-items:center;gap:8px">${trashSVG} ${t('trash')}</span>
+        <span style="color:var(--text-3);display:flex;align-items:center">${chevronSVG}</span>
+      </div>
+    </div>
+
+    <div class="profile-section">
+      <div class="profile-section-title">${t('preferences')}</div>
+      <div class="profile-row" style="cursor:default">
+        <span class="profile-row-label">${t('darkMode')}</span>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-theme" ${theme==='dark'?'checked':''} onchange="toggleTheme(this.checked)"/>
+          <div class="toggle-track"></div>
+        </label>
+      </div>
+      <div class="profile-row" style="cursor:default">
+        <span class="profile-row-label">${t('language')}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm ${lang==='es'?'btn-brand':'btn-outline'}" onclick="changeLang('es')">ES</button>
+          <button class="btn btn-sm ${lang==='en'?'btn-brand':'btn-outline'}" onclick="changeLang('en')">EN</button>
         </div>
       </div>
-
-      <div style="padding:16px">
-        <button class="btn btn-danger btn-full btn-lg" onclick="handleLogout()">${t('logout')}</button>
-        <p style="text-align:center;padding:16px 0 8px;font-size:var(--fs-xs);color:var(--text-3)">© 2026 ErkDevCr</p>
-        <p style="text-align:center;padding:0 0 24px;">
-          <span onclick="confirmDeleteAccount()" style="font-size:10px;color:#444;text-decoration:underline;cursor:pointer;letter-spacing:.03em;user-select:none;">${t('deleteAccount')}</span>
-        </p>
+      <div class="profile-row" style="cursor:default;flex-direction:column;align-items:flex-start;gap:10px">
+        <span class="profile-row-label">${t('fontSize')}</span>
+        <div class="font-size-opts w-full">
+          <button class="font-size-opt ${fs==='xs'?'active':''}" onclick="setFontSize('xs')">${t('fontXS')}</button>
+          <button class="font-size-opt ${fs==='small'?'active':''}" onclick="setFontSize('small')">${t('fontSmall')}</button>
+          <button class="font-size-opt ${fs==='normal'?'active':''}" onclick="setFontSize('normal')">${t('fontNormal')}</button>
+          <button class="font-size-opt ${fs==='large'?'active':''}" onclick="setFontSize('large')">${t('fontLarge')}</button>
+          <button class="font-size-opt ${fs==='xl'?'active':''}" onclick="setFontSize('xl')">${t('fontXL')}</button>
+        </div>
       </div>
-    `;
-  }
+    </div>
 
-  // ── Avatar upload ─────────────────────────────────────────────────
-  function resizeImage(file, size) {
-    return new Promise(function(resolve) {
-      var img = new Image();
-      img.onload = function() {
-        var canvas = document.createElement('canvas');
-        canvas.width = size; canvas.height = size;
-        var ctx = canvas.getContext('2d');
-        var s = Math.min(img.width, img.height);
-        var x = (img.width - s) / 2;
-        var y = (img.height - s) / 2;
-        ctx.drawImage(img, x, y, s, s, 0, 0, size, size);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.src = URL.createObjectURL(file);
+    <div style="padding:16px">
+      <button class="btn btn-danger btn-full btn-lg" onclick="handleLogout()">${t('logout')}</button>
+      <p style="text-align:center;padding:16px 0 8px;font-size:var(--fs-xs);color:var(--text-3)">© 2026 ErkDevCr</p>
+      <p style="text-align:center;padding:0 0 24px;">
+        <span onclick="confirmDeleteAccount()" style="font-size:10px;color:#444;text-decoration:underline;cursor:pointer;letter-spacing:.03em;user-select:none;">${t('deleteAccount')}</span>
+      </p>
+    </div>
+  `;
+}
+
+// ── Avatar options ─────────────────────────────────────────────────
+function showAvatarOptions() {
+  // i18n labels
+  var isEs = currentLang === 'es';
+  document.getElementById('avatar-opts-title').textContent = isEs ? 'Foto de perfil' : 'Profile photo';
+  document.getElementById('opt-take-photo').textContent = isEs ? 'Tomar foto' : 'Take photo';
+  document.getElementById('opt-upload-img').textContent = isEs ? 'Subir imagen' : 'Upload image';
+  document.getElementById('opt-remove-photo').textContent = isEs ? 'Eliminar foto' : 'Remove photo';
+  document.getElementById('opt-cancel').textContent = t('cancel');
+  // Show "remove" only if has photo
+  document.getElementById('btn-remove-avatar').style.display = currentProfile?.avatar_url ? 'flex' : 'none';
+  document.getElementById('modal-avatar-opts').classList.remove('hidden');
+}
+function closeAvatarOpts() { document.getElementById('modal-avatar-opts').classList.add('hidden'); }
+function openGallery() { closeAvatarOpts(); document.getElementById('avatar-file-input').click(); }
+
+// ── Camera ─────────────────────────────────────────────────────────
+var cameraStream = null;
+var cameraFacing = 'user';
+
+async function startCamera() {
+  closeAvatarOpts();
+  var modal = document.getElementById('modal-camera');
+  var video = document.getElementById('camera-video');
+  var errEl = document.getElementById('camera-error');
+  modal.classList.remove('hidden');
+  errEl.style.display = 'none';
+
+  try {
+    // Solicitar permiso de cámara
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: cameraFacing, width: { ideal: 1280 }, height: { ideal: 1280 } },
+      audio: false
     });
-  }
-
-  async function uploadAvatar(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    event.target.value = '';
-
-    // Mostrar loading
-    var circle = document.getElementById('profile-avatar-circle');
-    if (circle) circle.classList.add('avatar-loading');
-
-    try {
-      // Resize a 300x300
-      const dataUrl = await resizeImage(file, 300);
-      const blob = await (await fetch(dataUrl)).blob();
-
-      // Upload a Supabase Storage bucket "avatars"
-      const path = currentUser.id + '/avatar.jpg';
-      const { error: upErr } = await db.storage.from('avatars').upload(path, blob, {
-        upsert: true,
-        contentType: 'image/jpeg'
-      });
-      if (upErr) throw upErr;
-
-      // URL pública (cache buster para forzar recarga)
-      const { data: urlData } = db.storage.from('avatars').getPublicUrl(path);
-      const avatarUrl = urlData.publicUrl + '?t=' + Date.now();
-
-      // Guardar en profiles
-      const { error: dbErr } = await db.from('profiles')
-        .update({ avatar_url: avatarUrl })
-        .eq('id', currentUser.id);
-      if (dbErr) throw dbErr;
-
-      currentProfile.avatar_url = avatarUrl;
-      showToast('✓', 'success');
-      renderProfile();
-    } catch(e) {
-      if (circle) circle.classList.remove('avatar-loading');
-      showToast(t('errorGeneral'), 'error');
-      console.error('Avatar upload error:', e);
+    video.srcObject = cameraStream;
+  } catch(e) {
+    var isEs = currentLang === 'es';
+    if (e.name === 'NotAllowedError') {
+      errEl.textContent = isEs
+        ? 'Permiso de cámara denegado. Actívalo en la configuración de tu navegador.'
+        : 'Camera permission denied. Enable it in your browser settings.';
+    } else {
+      errEl.textContent = isEs ? 'No se pudo acceder a la cámara.' : 'Could not access camera.';
     }
+    errEl.style.display = 'block';
+    video.style.display = 'none';
   }
+}
 
-  // ── Delete account ────────────────────────────────────────────────
-  function confirmDeleteAccount() {
-    _delStep = 1;
-    document.getElementById('del-modal-title').textContent = t('deleteAccount');
-    document.getElementById('del-modal-desc').textContent = t('deleteAccountConfirm');
-    document.getElementById('del-step2').style.display = 'none';
-    document.getElementById('del-confirm-input').value = '';
-    document.getElementById('btn-del-cancel').textContent = t('cancel');
-    document.getElementById('btn-del-ok').textContent = t('delete');
-    document.getElementById('btn-del-ok').disabled = false;
-    document.getElementById('modal-delete-account').classList.remove('hidden');
+function closeCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  document.getElementById('modal-camera').classList.add('hidden');
+  document.getElementById('camera-video').style.display = '';
+}
+
+async function flipCamera() {
+  cameraFacing = cameraFacing === 'user' ? 'environment' : 'user';
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); }
+  var video = document.getElementById('camera-video');
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: cameraFacing },
+      audio: false
+    });
+    video.srcObject = cameraStream;
+  } catch(e) { /* ignore */ }
+}
+
+function capturePhoto() {
+  var video = document.getElementById('camera-video');
+  var canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 640;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  closeCamera();
+  openEditor(canvas.toDataURL('image/jpeg', 0.92));
+}
+
+// ── File select from gallery ───────────────────────────────────────
+function handleFileSelect(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+  var reader = new FileReader();
+  reader.onload = function(e) { openEditor(e.target.result); };
+  reader.readAsDataURL(file);
+}
+
+// ── Photo editor ───────────────────────────────────────────────────
+var edState = { img: null, x: 0, y: 0, scale: 1, rotation: 0 };
+var edDrag = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0 };
+var edPinch = { active: false, lastDist: 0, lastAngle: 0 };
+var CANVAS_SIZE = 280;
+
+function openEditor(src) {
+  var img = new Image();
+  img.onload = function() {
+    edState.img = img;
+    edState.x = 0;
+    edState.y = 0;
+    edState.rotation = 0;
+    // Scale so the image fills the circle
+    var minDim = Math.min(img.width, img.height);
+    edState.scale = CANVAS_SIZE / minDim;
+
+    // i18n
+    var isEs = currentLang === 'es';
+    document.getElementById('editor-title').textContent = isEs ? 'Ajustar foto' : 'Adjust photo';
+    document.getElementById('editor-hint').textContent = isEs
+      ? 'Arrastra · Pellizca para zoom · Rota con dos dedos'
+      : 'Drag · Pinch to zoom · Rotate with two fingers';
+    document.getElementById('btn-editor-cancel').textContent = t('cancel');
+    document.getElementById('btn-editor-save').textContent = t('save');
+
+    document.getElementById('modal-editor').classList.remove('hidden');
+    drawEditor();
+    bindEditorEvents();
+  };
+  img.src = src;
+}
+
+function closeEditor() {
+  document.getElementById('modal-editor').classList.add('hidden');
+  unbindEditorEvents();
+}
+
+function drawEditor() {
+  var canvas = document.getElementById('editor-canvas');
+  var ctx = canvas.getContext('2d');
+  var s = CANVAS_SIZE;
+  ctx.clearRect(0, 0, s, s);
+
+  if (!edState.img) return;
+
+  // Draw image with transforms (centered)
+  ctx.save();
+  ctx.translate(s/2 + edState.x, s/2 + edState.y);
+  ctx.rotate(edState.rotation);
+  ctx.scale(edState.scale, edState.scale);
+  ctx.drawImage(edState.img, -edState.img.width/2, -edState.img.height/2);
+  ctx.restore();
+
+  // Dark overlay outside circle (evenodd fill = hole in center)
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath();
+  ctx.rect(0, 0, s, s);
+  ctx.arc(s/2, s/2, s/2 - 2, 0, Math.PI*2, true);
+  ctx.fill('evenodd');
+  ctx.restore();
+
+  // Green circle border
+  ctx.strokeStyle = '#34b080';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(s/2, s/2, s/2 - 2, 0, Math.PI*2);
+  ctx.stroke();
+}
+
+// ── Editor gesture helpers ─────────────────────────────────────────
+function getCanvasXY(e) {
+  var canvas = document.getElementById('editor-canvas');
+  var rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) * (CANVAS_SIZE / rect.width),
+    y: (e.clientY - rect.top) * (CANVAS_SIZE / rect.height)
+  };
+}
+function getTouchDist(t1, t2) {
+  return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+}
+function getTouchAngle(t1, t2) {
+  return Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX);
+}
+function getTouchMid(t1, t2) {
+  return { x: (t1.clientX + t2.clientX)/2, y: (t1.clientY + t2.clientY)/2 };
+}
+
+// Touch events
+function onTouchStart(e) {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    edDrag.active = true;
+    edPinch.active = false;
+    edDrag.lastX = e.touches[0].clientX;
+    edDrag.lastY = e.touches[0].clientY;
+  } else if (e.touches.length === 2) {
+    edDrag.active = false;
+    edPinch.active = true;
+    edPinch.lastDist = getTouchDist(e.touches[0], e.touches[1]);
+    edPinch.lastAngle = getTouchAngle(e.touches[0], e.touches[1]);
   }
-  function delNextStep() {
-    if (_delStep === 1) {
-      _delStep = 2;
-      var word = t('deleteAccountWord');
-      document.getElementById('del-modal-desc').textContent = '';
-      document.getElementById('del-modal-prompt').innerHTML = t('deleteAccountPrompt') + ' <span id="del-confirm-word">' + word + '</span>';
-      document.getElementById('del-step2').style.display = 'block';
-      document.getElementById('btn-del-ok').disabled = true;
-      setTimeout(function() { document.getElementById('del-confirm-input').focus(); }, 100);
-    } else if (_delStep === 2) {
-      var input = document.getElementById('del-confirm-input').value.trim().toUpperCase();
-      if (input !== t('deleteAccountWord').toUpperCase()) {
-        var inp = document.getElementById('del-confirm-input');
-        inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake');
-        inp.value = ''; document.getElementById('btn-del-ok').disabled = true; return;
-      }
-      doDeleteAccount();
+}
+function onTouchMove(e) {
+  e.preventDefault();
+  if (edDrag.active && e.touches.length === 1) {
+    var dx = e.touches[0].clientX - edDrag.lastX;
+    var dy = e.touches[0].clientY - edDrag.lastY;
+    edState.x += dx;
+    edState.y += dy;
+    edDrag.lastX = e.touches[0].clientX;
+    edDrag.lastY = e.touches[0].clientY;
+    drawEditor();
+  } else if (edPinch.active && e.touches.length === 2) {
+    var dist = getTouchDist(e.touches[0], e.touches[1]);
+    var angle = getTouchAngle(e.touches[0], e.touches[1]);
+    edState.scale *= dist / edPinch.lastDist;
+    edState.scale = Math.max(0.2, Math.min(edState.scale, 8));
+    edState.rotation += angle - edPinch.lastAngle;
+    edPinch.lastDist = dist;
+    edPinch.lastAngle = angle;
+    drawEditor();
+  }
+}
+function onTouchEnd(e) {
+  if (e.touches.length === 0) { edDrag.active = false; edPinch.active = false; }
+  if (e.touches.length === 1) { edPinch.active = false; edDrag.active = true; edDrag.lastX = e.touches[0].clientX; edDrag.lastY = e.touches[0].clientY; }
+}
+
+// Mouse events (desktop)
+function onMouseDown(e) { edDrag.active = true; edDrag.lastX = e.clientX; edDrag.lastY = e.clientY; }
+function onMouseMove(e) {
+  if (!edDrag.active) return;
+  edState.x += e.clientX - edDrag.lastX;
+  edState.y += e.clientY - edDrag.lastY;
+  edDrag.lastX = e.clientX; edDrag.lastY = e.clientY;
+  drawEditor();
+}
+function onMouseUp() { edDrag.active = false; }
+function onWheel(e) {
+  e.preventDefault();
+  edState.scale *= e.deltaY < 0 ? 1.08 : 0.93;
+  edState.scale = Math.max(0.2, Math.min(edState.scale, 8));
+  drawEditor();
+}
+
+function bindEditorEvents() {
+  var c = document.getElementById('editor-canvas');
+  c.addEventListener('touchstart', onTouchStart, { passive: false });
+  c.addEventListener('touchmove', onTouchMove, { passive: false });
+  c.addEventListener('touchend', onTouchEnd, { passive: false });
+  c.addEventListener('mousedown', onMouseDown);
+  c.addEventListener('mousemove', onMouseMove);
+  c.addEventListener('mouseup', onMouseUp);
+  c.addEventListener('mouseleave', onMouseUp);
+  c.addEventListener('wheel', onWheel, { passive: false });
+}
+function unbindEditorEvents() {
+  var c = document.getElementById('editor-canvas');
+  if (!c) return;
+  c.removeEventListener('touchstart', onTouchStart);
+  c.removeEventListener('touchmove', onTouchMove);
+  c.removeEventListener('touchend', onTouchEnd);
+  c.removeEventListener('mousedown', onMouseDown);
+  c.removeEventListener('mousemove', onMouseMove);
+  c.removeEventListener('mouseup', onMouseUp);
+  c.removeEventListener('mouseleave', onMouseUp);
+  c.removeEventListener('wheel', onWheel);
+}
+
+// ── Save avatar from editor ────────────────────────────────────────
+async function saveAvatarFromEditor() {
+  var btn = document.getElementById('btn-editor-save');
+  btn.disabled = true; btn.textContent = '...';
+
+  // Render final 300x300 circular crop
+  var out = document.createElement('canvas');
+  out.width = 300; out.height = 300;
+  var ctx = out.getContext('2d');
+
+  // Clip to circle
+  ctx.beginPath();
+  ctx.arc(150, 150, 150, 0, Math.PI*2);
+  ctx.clip();
+
+  // Apply same transforms scaled to 300
+  var ratio = 300 / CANVAS_SIZE;
+  ctx.translate(150 + edState.x * ratio, 150 + edState.y * ratio);
+  ctx.rotate(edState.rotation);
+  ctx.scale(edState.scale * ratio, edState.scale * ratio);
+  ctx.drawImage(edState.img, -edState.img.width/2, -edState.img.height/2);
+
+  var dataUrl = out.toDataURL('image/jpeg', 0.88);
+  closeEditor();
+
+  // Upload to Supabase Storage
+  var circle = document.getElementById('profile-avatar-circle');
+  if (circle) circle.classList.add('avatar-loading');
+  try {
+    var blob = await (await fetch(dataUrl)).blob();
+    var path = currentUser.id + '/avatar.jpg';
+    var { error: upErr } = await db.storage.from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+    if (upErr) throw upErr;
+    var { data: urlData } = db.storage.from('avatars').getPublicUrl(path);
+    var avatarUrl = urlData.publicUrl + '?t=' + Date.now();
+    var { error: dbErr } = await db.from('profiles').update({ avatar_url: avatarUrl }).eq('id', currentUser.id);
+    if (dbErr) throw dbErr;
+    currentProfile.avatar_url = avatarUrl;
+    showToast('✓', 'success');
+    renderProfile();
+  } catch(e) {
+    if (circle) circle.classList.remove('avatar-loading');
+    showToast(t('errorGeneral'), 'error');
+    console.error('Avatar upload error:', e);
+  }
+}
+
+// ── Remove avatar ──────────────────────────────────────────────────
+async function removeAvatar() {
+  closeAvatarOpts();
+  try {
+    await db.storage.from('avatars').remove([currentUser.id + '/avatar.jpg']);
+    await db.from('profiles').update({ avatar_url: null }).eq('id', currentUser.id);
+    currentProfile.avatar_url = null;
+    showToast('✓', 'success');
+    renderProfile();
+  } catch(e) { showToast(t('errorGeneral'), 'error'); }
+}
+
+// ── Settings helpers ───────────────────────────────────────────────
+function toggleTheme(isDark) { localStorage.setItem('theme', isDark ? 'dark' : 'light'); document.body.classList.toggle('light', !isDark); }
+function changeLang(lang) { setLang(lang); renderProfile(); }
+function setFontSize(size) {
+  localStorage.setItem('fontSize', size);
+  document.body.classList.remove('font-xs','font-small','font-normal','font-large','font-xl');
+  document.body.classList.add('font-' + size); renderProfile();
+}
+
+// ── Edit account fields ────────────────────────────────────────────
+function openField(field) {
+  activeField = field;
+  const title = document.getElementById('field-modal-title');
+  const inputs = document.getElementById('field-inputs');
+  if (field === 'name') {
+    title.textContent = t('changeName');
+    inputs.innerHTML = `<label class="input-label">${t('newName')}</label><input class="input" type="text" id="field-val" value="${esc(currentProfile?.display_name||'')}" maxlength="60"/>`;
+  } else if (field === 'email') {
+    title.textContent = t('changeEmail');
+    inputs.innerHTML = `<label class="input-label">${t('newEmail')}</label><input class="input" type="email" id="field-val" value="${esc(currentUser.email||'')}"/>`;
+  } else if (field === 'password') {
+    title.textContent = t('changePassword');
+    inputs.innerHTML = `<label class="input-label">${t('newPassword')}</label><input class="input" type="password" id="field-val" placeholder="••••••••" minlength="6"/>`;
+  }
+  document.getElementById('modal-edit-field').classList.remove('hidden');
+  setTimeout(() => document.getElementById('field-val')?.focus(), 100);
+}
+async function saveField() {
+  const val = document.getElementById('field-val')?.value?.trim(); if (!val) return;
+  const btn = document.getElementById('btn-save-field'); btn.disabled = true; btn.querySelector('span').textContent = t('saving');
+  let error = null;
+  if (activeField === 'name') { const { error: e } = await db.from('profiles').update({ display_name: val }).eq('id', currentUser.id); if (!e) currentProfile.display_name = val; error = e; }
+  else if (activeField === 'email') { const { error: e } = await db.auth.updateUser({ email: val }); error = e; }
+  else if (activeField === 'password') { const { error: e } = await db.auth.updateUser({ password: val }); error = e; }
+  btn.disabled = false; btn.querySelector('span').textContent = t('save');
+  if (error) { showToast(error.message || t('errorGeneral'), 'error'); return; }
+  document.getElementById('modal-edit-field').classList.add('hidden');
+  showToast('✓', 'success'); renderProfile();
+}
+
+// ── Delete account ─────────────────────────────────────────────────
+function confirmDeleteAccount() {
+  _delStep = 1;
+  document.getElementById('del-modal-title').textContent = t('deleteAccount');
+  document.getElementById('del-modal-desc').textContent = t('deleteAccountConfirm');
+  document.getElementById('del-step2').style.display = 'none';
+  document.getElementById('del-confirm-input').value = '';
+  document.getElementById('btn-del-cancel').textContent = t('cancel');
+  document.getElementById('btn-del-ok').textContent = t('delete');
+  document.getElementById('btn-del-ok').disabled = false;
+  document.getElementById('modal-delete-account').classList.remove('hidden');
+}
+function delNextStep() {
+  if (_delStep === 1) {
+    _delStep = 2;
+    var word = t('deleteAccountWord');
+    document.getElementById('del-modal-desc').textContent = '';
+    document.getElementById('del-modal-prompt').innerHTML = t('deleteAccountPrompt') + ' <span id="del-confirm-word">' + word + '</span>';
+    document.getElementById('del-step2').style.display = 'block';
+    document.getElementById('btn-del-ok').disabled = true;
+    setTimeout(function() { document.getElementById('del-confirm-input').focus(); }, 100);
+  } else if (_delStep === 2) {
+    var input = document.getElementById('del-confirm-input').value.trim().toUpperCase();
+    if (input !== t('deleteAccountWord').toUpperCase()) {
+      var inp = document.getElementById('del-confirm-input');
+      inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake');
+      inp.value = ''; document.getElementById('btn-del-ok').disabled = true; return;
     }
+    doDeleteAccount();
   }
-  function closeDel() { document.getElementById('modal-delete-account').classList.add('hidden'); _delStep = 0; }
-  async function doDeleteAccount() {
-    var okBtn = document.getElementById('btn-del-ok'); okBtn.disabled = true; okBtn.textContent = '...';
-    try {
-      const uid = currentUser.id;
-      // Borrar avatar del storage también
-      await db.storage.from('avatars').remove([uid + '/avatar.jpg']);
-      await db.from('list_members').delete().eq('user_id', uid);
-      await db.from('lists').delete().eq('owner_id', uid);
-      await db.from('profiles').delete().eq('id', uid);
-      await db.auth.signOut(); location.href = 'index.html';
-    } catch(e) { await db.auth.signOut(); location.href = 'index.html'; }
-  }
-
-  function toggleTheme(isDark) { localStorage.setItem('theme', isDark ? 'dark' : 'light'); document.body.classList.toggle('light', !isDark); }
-  function changeLang(lang) { setLang(lang); renderProfile(); }
-  function setFontSize(size) {
-    localStorage.setItem('fontSize', size);
-    document.body.classList.remove('font-xs','font-small','font-normal','font-large','font-xl');
-    document.body.classList.add('font-' + size); renderProfile();
-  }
-
-  function openField(field) {
-    activeField = field;
-    const title = document.getElementById('field-modal-title');
-    const inputs = document.getElementById('field-inputs');
-    if (field === 'name') {
-      title.textContent = t('changeName');
-      inputs.innerHTML = `<label class="input-label">${t('newName')}</label><input class="input" type="text" id="field-val" value="${esc(currentProfile?.display_name||'')}" maxlength="60"/>`;
-    } else if (field === 'email') {
-      title.textContent = t('changeEmail');
-      inputs.innerHTML = `<label class="input-label">${t('newEmail')}</label><input class="input" type="email" id="field-val" value="${esc(currentUser.email||'')}"/>`;
-    } else if (field === 'password') {
-      title.textContent = t('changePassword');
-      inputs.innerHTML = `<label class="input-label">${t('newPassword')}</label><input class="input" type="password" id="field-val" placeholder="••••••••" minlength="6"/>`;
-    }
-    document.getElementById('modal-edit-field').classList.remove('hidden');
-    setTimeout(() => document.getElementById('field-val')?.focus(), 100);
-  }
-
-  async function saveField() {
-    const val = document.getElementById('field-val')?.value?.trim(); if (!val) return;
-    const btn = document.getElementById('btn-save-field'); btn.disabled = true; btn.querySelector('span').textContent = t('saving');
-    let error = null;
-    if (activeField === 'name') { const { error: e } = await db.from('profiles').update({ display_name: val }).eq('id', currentUser.id); if (!e) currentProfile.display_name = val; error = e; }
-    else if (activeField === 'email') { const { error: e } = await db.auth.updateUser({ email: val }); error = e; }
-    else if (activeField === 'password') { const { error: e } = await db.auth.updateUser({ password: val }); error = e; }
-    btn.disabled = false; btn.querySelector('span').textContent = t('save');
-    if (error) { showToast(error.message || t('errorGeneral'), 'error'); return; }
-    document.getElementById('modal-edit-field').classList.add('hidden');
-    showToast('✓', 'success'); renderProfile();
-  }
-
-  async function handleLogout() { await db.auth.signOut(); location.href = 'index.html'; }
-  function esc(s='') { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+}
+function closeDel() { document.getElementById('modal-delete-account').classList.add('hidden'); _delStep = 0; }
+async function doDeleteAccount() {
+  var okBtn = document.getElementById('btn-del-ok'); okBtn.disabled = true; okBtn.textContent = '...';
+  try {
+    const uid = currentUser.id;
+    await db.storage.from('avatars').remove([uid + '/avatar.jpg']);
+    await db.from('list_members').delete().eq('user_id', uid);
+    await db.from('lists').delete().eq('owner_id', uid);
+    await db.from('profiles').delete().eq('id', uid);
+    await db.auth.signOut(); location.href = 'index.html';
+  } catch(e) { await db.auth.signOut(); location.href = 'index.html'; }
+}
+async function handleLogout() { await db.auth.signOut(); location.href = 'index.html'; }
 </script>
 </body>
 </html>
