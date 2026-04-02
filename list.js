@@ -121,23 +121,25 @@ window.renderPage = function() {
   var pct = window.items.length > 0 ? Math.round((below.length / window.items.length) * 100) : 0;
   var prog = document.getElementById('top-progress');
   if (prog) {
+    var checkedOnlyCount = below.length - completed.length;
     if (pct === 0) {
-      prog.style.display = 'none';
+      // Vacío
+      prog.style.cssText = 'display:none';
+      prog.innerHTML = '';
+    } else if (completed.length === 0) {
+      // Solo verde
+      prog.style.cssText = 'display:block;width:' + pct + '%;background:var(--brand)';
+      prog.innerHTML = '';
+    } else if (checkedOnlyCount === 0) {
+      // Solo rojo
+      prog.style.cssText = 'display:block;width:' + pct + '%;background:#a84442';
+      prog.innerHTML = '';
     } else {
-      var checkedOnlyCount = below.length - completed.length;
-      prog.style.display = 'block';
-      prog.style.width = pct + '%';
-      if (completed.length === 0) {
-        // Solo verdes
-        prog.style.background = 'var(--brand)';
-      } else if (checkedOnlyCount === 0) {
-        // Solo rojos
-        prog.style.background = '#c0504d';
-      } else {
-        // Verde al inicio, rojo al final
-        var greenPct = Math.round(checkedOnlyCount / below.length * 100);
-        prog.style.background = 'linear-gradient(to right, var(--brand) ' + greenPct + '%, #c0504d ' + greenPct + '%)';
-      }
+      // Dos segmentos: verde + rojo con esquina izquierda redondeada
+      prog.style.cssText = 'display:flex;width:' + pct + '%;height:100%;background:none;border-radius:0';
+      prog.innerHTML =
+        '<div style="flex:' + checkedOnlyCount + ';background:var(--brand)"></div>' +
+        '<div style="flex:' + completed.length + ';background:#a84442;border-radius:3px 0 0 3px"></div>';
     }
   }
   var html = '';
