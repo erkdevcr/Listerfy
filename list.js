@@ -201,12 +201,18 @@ window.cycleState = function(id) {
   // Solo aplicar efecto visual al tocar ítems azules (unchecked → checked)
   if (state === 'unchecked') {
     var row = document.getElementById('row-' + id);
+    var circle = row ? row.querySelector('.item-circle') : null;
+    // Glow verde en el row
     if (row) {
       row.classList.remove('item-tapping');
       void row.offsetWidth;
       row.classList.add('item-tapping');
     }
-    setTimeout(applyStateChange, 200);
+    // Círculo se convierte en logo verde inmediatamente
+    if (circle) {
+      circle.classList.add('state-checked');
+    }
+    setTimeout(applyStateChange, 220);
   } else if (state === 'checked') {
     var row = document.getElementById('row-' + id);
     if (row) {
