@@ -119,7 +119,11 @@ window.renderPage = function() {
   var below = sortedItems.filter(function(i) { return i.item_state === 'checked' || i.item_state === 'completed'; });
   var completed = sortedItems.filter(function(i) { return i.item_state === 'completed'; });
   var pct = window.items.length > 0 ? Math.round((below.length / window.items.length) * 100) : 0;
-  var prog = document.getElementById('top-progress'); if (prog) prog.style.width = pct + '%';
+  var prog = document.getElementById('top-progress');
+  if (prog) {
+    prog.style.width = pct + '%';
+    prog.style.display = pct === 0 ? 'none' : 'block';
+  }
   var html = '';
   if (window.items.length === 0) {
     html = '<div class="empty-state"><div class="empty-icon">🛒</div><h3>' + t('noItems') + '</h3><p>' + t('noItemsHint') + '</p></div>';
