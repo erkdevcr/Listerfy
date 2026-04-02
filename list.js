@@ -253,34 +253,44 @@ window.copySelectedItems = function() {
 window.confirmDeleteItem = function() { db.from('items').delete().eq('id', window._lastEditId).then(function() { document.getElementById('modal-del-item').classList.add('hidden'); }); };
 
 window.clearCompleted = function() {
-  var completedIds = window.items
-    .filter(function(i) { return i.item_state === 'completed'; })
-    .map(function(i) { return i.id; });
-  if (!completedIds.length) return;
+  var hasCompleted = window.items.some(function(i) { return i.item_state === 'completed'; });
+  if (!hasCompleted) return;
   // Update local state immediately
   window.items.forEach(function(i) { if (i.item_state === 'completed') i.item_state = 'unchecked'; });
   window.renderPage();
   window._localChange = true;
-  // Single batch update — all completed IDs in one query
+  // Filter by list_id + item_state — RLS-safe single query
   db.from('items')
     .update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null })
-    .in('id', completedIds)
-    .then(function() { window._localChange = false; });
+    .eq('list_id', LIST_ID)
+    .eq('item_state', 'completed')
+    .then(function(res) {
+      window._localChange = false;
+      if (res.error) console.error('clearCompleted error:', res.error);
+    });
 };
 
 window.doClearAll = function() {
-  var allIds = window.items.map(function(i) { return i.id; });
-  if (!allIds.length) return;
+  if (!window.items.length) return;
   // Update local state immediately
   window.items.forEach(function(i) { i.item_state = 'unchecked'; i.is_checked = false; });
   window.renderPage();
   document.getElementById('modal-clear-all').classList.add('hidden');
   window._localChange = true;
-  // Single batch update — all IDs in one query
-  db.from('items')
-    .update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null })
-    .in('id', allIds)
-    .then(function() { window._localChange = false; });
+  // Update checked items first, then completed — both filter by list_id (RLS-safe)
+  Promise.all([
+    db.from('items')
+      .update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null })
+      .eq('list_id', LIST_ID)
+      .eq('item_state', 'checked'),
+    db.from('items')
+      .update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null })
+      .eq('list_id', LIST_ID)
+      .eq('item_state', 'completed')
+  ]).then(function(results) {
+    window._localChange = false;
+    results.forEach(function(r) { if (r.error) console.error('doClearAll error:', r.error); });
+  });
 };
 
 window.openInviteModal = function() { document.getElementById('inv-email').value = ''; document.getElementById('modal-invite').classList.remove('hidden'); setTimeout(function(){ document.getElementById('inv-email').focus(); }, 100); applyTranslations(); };
