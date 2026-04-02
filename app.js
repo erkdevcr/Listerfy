@@ -46,7 +46,7 @@ window.loadLists = function() {
         Promise.all([
           db.from('items').select('*',{count:'exact',head:true}).eq('list_id', list.id),
           db.from('items').select('*',{count:'exact',head:true}).eq('list_id', list.id).eq('is_checked', true),
-          db.from('list_members').select('user_id, profiles(display_name)').eq('list_id', list.id),
+          db.from('list_members').select('user_id, profiles(display_name, avatar_url)').eq('list_id', list.id),
           db.from('items').select('*',{count:'exact',head:true}).eq('list_id', list.id).eq('item_state', 'completed'),
         ]).then(function(results) {
           var total = results[0].count || 0;
@@ -83,6 +83,8 @@ window.renderLists = function(lists) {
     var currentUid = window.currentUser && window.currentUser.id;
     var avatars = list.members.filter(function(m) { return m.user_id !== currentUid; }).slice(0,5).map(function(m) {
       var name = (m.profiles && m.profiles.display_name) || '?';
+      var url = m.profiles && m.profiles.avatar_url;
+      if (url) return '<div class="avatar" style="background:' + avatarColor(name) + ';padding:0;overflow:hidden"><img src="' + url + '" width="100%" height="100%" style="object-fit:cover;border-radius:50%;display:block"></div>';
       return '<div class="avatar" style="background:' + avatarColor(name) + '">' + avatarInitials(name) + '</div>';
     }).join('');
     return '<div class="list-card" id="card-' + list.id + '"' +

@@ -68,7 +68,7 @@ window.loadAll = function() {
   return Promise.all([
     db.from('lists').select('*').eq('id', LIST_ID).is('deleted_at', null).single(),
     db.from('categories').select('*').order('is_default', { ascending: false }),
-    db.from('list_members').select('user_id, role, profiles(display_name, email)').eq('list_id', LIST_ID),
+    db.from('list_members').select('user_id, role, profiles(display_name, email, avatar_url)').eq('list_id', LIST_ID),
     db.from('items').select('*, categories(name_es, name_en, icon)').eq('list_id', LIST_ID).order('created_at', { ascending: true })
   ]).then(function(results) {
     var list = results[0].data;
@@ -92,7 +92,7 @@ window.renderTopbar = function() {
   var avatars = window.members.filter(function(m) { return m.user_id !== window.currentUser.id; }).slice(0,5).map(function(m) {
     var name = (m.profiles && m.profiles.display_name) || '?';
     var url = m.profiles && m.profiles.avatar_url;
-    if (url) return '<div class="avatar avatar-sm" style="background:' + avatarColor(name) + ';overflow:hidden;padding:0"><img src="' + url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block"></div>';
+    if (url) return '<div class="avatar avatar-sm" style="background:' + avatarColor(name) + ';padding:0;overflow:hidden"><img src="' + url + '" width="100%" height="100%" style="object-fit:cover;border-radius:50%;display:block"></div>';
     return '<div class="avatar avatar-sm" style="background:' + avatarColor(name) + '">' + avatarInitials(name) + '</div>';
   }).join('');
   document.getElementById('topbar-actions').innerHTML =
@@ -427,7 +427,7 @@ window.openMembersModal = function() {
     var initials = name.trim().split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)||'?';
     var url = m.profiles && m.profiles.avatar_url;
     var avatarHtml = url
-      ? '<div class="avatar" style="background:' + color + ';flex-shrink:0;overflow:hidden;padding:0"><img src="' + url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block"></div>'
+      ? '<div class="avatar" style="background:' + color + ';flex-shrink:0;padding:0;overflow:hidden"><img src="' + url + '" width="100%" height="100%" style="object-fit:cover;border-radius:50%;display:block"></div>'
       : '<div class="avatar" style="background:' + color + ';flex-shrink:0">' + initials + '</div>';
     return '<div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border)">' +
       avatarHtml +
