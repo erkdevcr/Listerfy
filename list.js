@@ -253,21 +253,34 @@ window.copySelectedItems = function() {
 window.confirmDeleteItem = function() { db.from('items').delete().eq('id', window._lastEditId).then(function() { document.getElementById('modal-del-item').classList.add('hidden'); }); };
 
 window.clearCompleted = function() {
-  var completedIds = window.items.filter(function(i) { return i.item_state === 'completed'; }).map(function(i) { return i.id; });
+  var completedIds = window.items
+    .filter(function(i) { return i.item_state === 'completed'; })
+    .map(function(i) { return i.id; });
   if (!completedIds.length) return;
+  // Update local state immediately
   window.items.forEach(function(i) { if (i.item_state === 'completed') i.item_state = 'unchecked'; });
-  window.renderPage(); window._localChange = true;
-  var chain = Promise.resolve();
-  completedIds.forEach(function(id) { chain = chain.then(function() { return db.from('items').update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null }).eq('id', id); }); });
-  chain.then(function() { window._localChange = false; });
+  window.renderPage();
+  window._localChange = true;
+  // Single batch update — all completed IDs in one query
+  db.from('items')
+    .update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null })
+    .in('id', completedIds)
+    .then(function() { window._localChange = false; });
 };
+
 window.doClearAll = function() {
   var allIds = window.items.map(function(i) { return i.id; });
-  window.items.forEach(function(i) { i.item_state = 'unchecked'; }); window.renderPage();
-  document.getElementById('modal-clear-all').classList.add('hidden'); window._localChange = true;
-  var chain = Promise.resolve();
-  allIds.forEach(function(id) { chain = chain.then(function() { return db.from('items').update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null }).eq('id', id); }); });
-  chain.then(function() { window._localChange = false; });
+  if (!allIds.length) return;
+  // Update local state immediately
+  window.items.forEach(function(i) { i.item_state = 'unchecked'; i.is_checked = false; });
+  window.renderPage();
+  document.getElementById('modal-clear-all').classList.add('hidden');
+  window._localChange = true;
+  // Single batch update — all IDs in one query
+  db.from('items')
+    .update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null })
+    .in('id', allIds)
+    .then(function() { window._localChange = false; });
 };
 
 window.openInviteModal = function() { document.getElementById('inv-email').value = ''; document.getElementById('modal-invite').classList.remove('hidden'); setTimeout(function(){ document.getElementById('inv-email').focus(); }, 100); applyTranslations(); };
