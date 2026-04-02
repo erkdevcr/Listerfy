@@ -47,11 +47,13 @@ window.loadLists = function() {
           db.from('items').select('*',{count:'exact',head:true}).eq('list_id', list.id),
           db.from('items').select('*',{count:'exact',head:true}).eq('list_id', list.id).eq('is_checked', true),
           db.from('list_members').select('user_id, profiles(display_name)').eq('list_id', list.id),
+          db.from('items').select('*',{count:'exact',head:true}).eq('list_id', list.id).eq('item_state', 'completed'),
         ]).then(function(results) {
           var total = results[0].count || 0;
           var checked = results[1].count || 0;
           var members = results[2].data || [];
-          enriched[idx] = Object.assign({}, list, { total: total, checked: checked, members: members, hasNew: false });
+          var completedCount = results[3].count || 0;
+          enriched[idx] = Object.assign({}, list, { total: total, checked: checked, completedCount: completedCount, members: members, hasNew: false });
           pending--;
           if (pending === 0) renderLists(enriched);
         });
@@ -86,7 +88,21 @@ window.renderLists = function(lists) {
       '<div class="list-card-name">' + esc(list.name) + '</div>' +
       '<div class="list-card-progress">' +
         '<div class="progress-dot"></div>' +
-        '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%;' + (pct === 0 ? 'display:none' : '') + '"></div></div>' +
+        (function() {
+        var checkedOnly = list.checked - list.completedCount;
+        var fillStyle = 'width:' + pct + '%;';
+        if (pct === 0) {
+          fillStyle += 'display:none;';
+        } else if (list.completedCount === 0) {
+          fillStyle += 'background:var(--brand);';
+        } else if (checkedOnly === 0) {
+          fillStyle += 'background:#ef4444;';
+        } else {
+          var gp = Math.round(checkedOnly / list.checked * 100);
+          fillStyle += 'background:linear-gradient(to right,var(--brand) ' + gp + '%,#ef4444 ' + gp + '%);';
+        }
+        return '<div class="progress-track"><div class="progress-fill" style="' + fillStyle + '"></div></div>';
+      })() +
         '<span class="progress-count">' + list.checked + '/' + list.total + '</span>' +
       '</div>' +
       '<div class="list-card-footer">' +

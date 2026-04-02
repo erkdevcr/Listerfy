@@ -121,8 +121,24 @@ window.renderPage = function() {
   var pct = window.items.length > 0 ? Math.round((below.length / window.items.length) * 100) : 0;
   var prog = document.getElementById('top-progress');
   if (prog) {
-    prog.style.width = pct + '%';
-    prog.style.display = pct === 0 ? 'none' : 'block';
+    if (pct === 0) {
+      prog.style.display = 'none';
+    } else {
+      var checkedOnlyCount = below.length - completed.length;
+      prog.style.display = 'block';
+      prog.style.width = pct + '%';
+      if (completed.length === 0) {
+        // Solo verdes
+        prog.style.background = 'var(--brand)';
+      } else if (checkedOnlyCount === 0) {
+        // Solo rojos
+        prog.style.background = '#ef4444';
+      } else {
+        // Verde al inicio, rojo al final
+        var greenPct = Math.round(checkedOnlyCount / below.length * 100);
+        prog.style.background = 'linear-gradient(to right, var(--brand) ' + greenPct + '%, #ef4444 ' + greenPct + '%)';
+      }
+    }
   }
   var html = '';
   if (window.items.length === 0) {
