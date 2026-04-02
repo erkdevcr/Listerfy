@@ -7,8 +7,17 @@
     '  40%  { background: rgba(52,176,128,0.13); box-shadow: inset 0 0 0 2px rgba(52,176,128,0.35); }',
     '  100% { background: rgba(52,176,128,0);    box-shadow: inset 0 0 0 0px rgba(52,176,128,0); }',
     '}',
+    '@keyframes item-tap-glow-red {',
+    '  0%   { background: rgba(239,68,68,0);    box-shadow: inset 0 0 0 0px rgba(239,68,68,0); }',
+    '  40%  { background: rgba(239,68,68,0.11); box-shadow: inset 0 0 0 2px rgba(239,68,68,0.28); }',
+    '  100% { background: rgba(239,68,68,0);    box-shadow: inset 0 0 0 0px rgba(239,68,68,0); }',
+    '}',
     '.item-row.item-tapping {',
     '  animation: item-tap-glow 0.22s ease-out forwards;',
+    '  border-radius: 10px;',
+    '}',
+    '.item-row.item-tapping-red {',
+    '  animation: item-tap-glow-red 0.22s ease-out forwards;',
     '  border-radius: 10px;',
     '}'
   ].join('');
@@ -165,12 +174,27 @@ window.cycleState = function(id) {
     var row = document.getElementById('row-' + id);
     if (row) {
       row.classList.remove('item-tapping');
-      void row.offsetWidth; // forzar reflow para reiniciar animación
+      void row.offsetWidth;
       row.classList.add('item-tapping');
     }
     setTimeout(applyStateChange, 200);
+  } else if (state === 'checked') {
+    var row = document.getElementById('row-' + id);
+    if (row) {
+      row.classList.remove('item-tapping-red');
+      void row.offsetWidth;
+      row.classList.add('item-tapping-red');
+    }
+    setTimeout(applyStateChange, 200);
   } else {
-    applyStateChange();
+    // completed → checked: glow verde suave
+    var row = document.getElementById('row-' + id);
+    if (row) {
+      row.classList.remove('item-tapping');
+      void row.offsetWidth;
+      row.classList.add('item-tapping');
+    }
+    setTimeout(applyStateChange, 200);
   }
 };
 
