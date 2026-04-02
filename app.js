@@ -56,6 +56,11 @@ window.loadLists = function() {
           enriched[idx] = Object.assign({}, list, { total: total, checked: checked, completedCount: completedCount, members: members, hasNew: false });
           pending--;
           if (pending === 0) renderLists(enriched);
+        }).catch(function(err) {
+          console.error('loadLists Promise.all error:', err);
+          enriched[idx] = Object.assign({}, list, { total: 0, checked: 0, completedCount: 0, members: [], hasNew: false });
+          pending--;
+          if (pending === 0) renderLists(enriched);
         });
       });
     });
