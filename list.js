@@ -21,10 +21,12 @@
     '.item-row.item-tapping-red{animation:item-tap-glow-red 0.22s ease-out forwards;border-radius:10px}' +
     // Checked (verde): logo verde
     '.item-circle.state-checked{background-color:var(--brand);border-color:transparent;' +
-    '-webkit-mask:' + lm + ';mask:' + lm + '}' +
+    '-webkit-mask:' + lm + ';mask:' + lm + ';transform:scale(1.22)}' +
     // Completed (rojo): logo rojo
     '.item-circle.state-completed{background-color:#ef4444;border-color:transparent;' +
-    '-webkit-mask:' + lm + ';mask:' + lm + '}';
+    '-webkit-mask:' + lm + ';mask:' + lm + ';transform:scale(1.22)}' +
+    // Ocultar el check blanco nativo que viene de style.css
+    '.item-circle.state-checked::after,.item-circle.state-completed::after{display:none}';
   document.head.appendChild(s);
 })();
 
