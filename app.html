@@ -4,6 +4,12 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Listerfy</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#34b080"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Listerfy"/>
   <link rel="stylesheet" href="style.css"/>
   <link rel="icon" type="image/svg+xml" href="logo.svg"/>
   <style>
@@ -214,5 +220,14 @@
 <script src="i18n.js"></script>
 <script src="supabase.js"></script>
 <script src="app.js?v=9"></script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("/Listerfy/sw.js")
+      .catch(function(e) { console.log("SW error:", e); });
+  });
+}
+</script>
 </body>
 </html>
