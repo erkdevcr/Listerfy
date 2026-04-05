@@ -327,6 +327,16 @@ function renderProfile() {
           <button class="btn btn-sm ${lang==='en'?'btn-brand':'btn-outline'}" onclick="changeLang('en')">EN</button>
         </div>
       </div>
+      <div class="profile-row" style="cursor:default">
+        <span class="profile-row-label" style="display:flex;flex-direction:column;gap:2px">
+          ${t('screenAwake')}
+          <span style="font-size:var(--fs-xs);color:var(--text-3);font-weight:400">${t('screenAwakeHint')}</span>
+        </span>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-awake" ${localStorage.getItem('screenAwake')==='1'?'checked':''} onchange="toggleAwake(this.checked)"/>
+          <div class="toggle-track"></div>
+        </label>
+      </div>
       <div class="profile-row" style="cursor:default;flex-direction:column;align-items:flex-start;gap:10px">
         <span class="profile-row-label">${t('fontSize')}</span>
         <div class="font-size-opts w-full">
@@ -669,7 +679,10 @@ async function removeAvatar() {
 }
 
 // ── Settings helpers ───────────────────────────────────────────────
-function toggleTheme(isDark) { localStorage.setItem('theme', isDark ? 'dark' : 'light'); document.body.classList.toggle('light', !isDark); }
+function toggleAwake(on) {
+    localStorage.setItem('screenAwake', on ? '1' : '0');
+  }
+  function toggleTheme(isDark) { localStorage.setItem('theme', isDark ? 'dark' : 'light'); document.body.classList.toggle('light', !isDark); }
 function changeLang(lang) { setLang(lang); renderProfile(); }
 function setFontSize(size) {
   localStorage.setItem('fontSize', size);
