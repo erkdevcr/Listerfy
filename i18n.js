@@ -46,6 +46,8 @@ const i18n = {
     deleteAccountPrompt: 'Escribe ELIMINAR para confirmar:',
     deleteAccountWord: 'ELIMINAR',
     deleteAccountCancelled: 'Cancelado. Debes escribir exactamente ELIMINAR.',
+    screenAwake: 'Pantalla siempre encendida',
+    screenAwakeHint: 'Evita que la pantalla se apague al ver una lista',
     // Papelera
     trash: 'Papelera',
     trashEmpty: 'La papelera está vacía',
@@ -108,6 +110,8 @@ const i18n = {
     deleteAccountPrompt: 'Type DELETE to confirm:',
     deleteAccountWord: 'DELETE',
     deleteAccountCancelled: 'Cancelled. You must type exactly DELETE.',
+    screenAwake: 'Keep screen on',
+    screenAwakeHint: 'Prevents screen from turning off while viewing a list',
     // Trash
     trash: 'Trash',
     trashEmpty: 'Trash is empty',

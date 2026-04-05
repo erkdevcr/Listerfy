@@ -218,5 +218,34 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+
+<script>
+// ── Wake Lock — pantalla siempre encendida ──────────────────────
+var _wakeLock = null;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  if (localStorage.getItem('screenAwake') !== '1') return;
+  try {
+    _wakeLock = await navigator.wakeLock.request('screen');
+  } catch(e) {
+    console.log('Wake Lock no disponible:', e.message);
+  }
+}
+
+function releaseWakeLock() {
+  if (_wakeLock) { _wakeLock.release(); _wakeLock = null; }
+}
+
+// Solicitar al cargar, liberar al salir
+window.addEventListener('load', requestWakeLock);
+window.addEventListener('beforeunload', releaseWakeLock);
+
+// Re-solicitar si el documento vuelve a ser visible (ej. tras bloqueo)
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') requestWakeLock();
+  else releaseWakeLock();
+});
+</script>
 </body>
 </html>
