@@ -492,48 +492,47 @@ window.copySelectedItems = function() {
 window.confirmDeleteItem = function() { db.from('items').delete().eq('id', window._lastEditId).then(function() { document.getElementById('modal-del-item').classList.add('hidden'); }); };
 
 window.clearCompleted = function() {
-  var hasCompleted = window.items.some(function(i) { return i.item_state === 'completed'; });
-  if (!hasCompleted) return;
-  // Update local state immediately
+  var completedIds = window.items
+    .filter(function(i) { return i.item_state === 'completed'; })
+    .map(function(i) { return i.id; });
+  if (!completedIds.length) return;
+  // Actualizar local inmediatamente
   window.items.forEach(function(i) { if (i.item_state === 'completed') i.item_state = 'unchecked'; });
   window.renderPage();
   window._localChange = true;
-  // Filter by list_id + item_state — RLS-safe single query
   var clearPayload = { item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null };
-  var clearTs = new Date().toISOString();
-  queueOp({ type: 'update_items_batch', ids: completedIds, data: clearPayload, _ts: clearTs });
-  if (window._isOnline) {
-    db.from('items').update(clearPayload).eq('list_id', LIST_ID).eq('item_state', 'completed')
-      .then(function(res) {
-        window._localChange = false;
-        if (!res.error) { var q = getQueue().filter(function(x){ return x.type !== 'update_items_batch' || JSON.stringify(x.ids) !== JSON.stringify(completedIds); }); saveQueue(q); }
-        if (res.error) console.error('clearCompleted error:', res.error);
-      });
-  } else { window._localChange = false; }
+  db.from('items')
+    .update(clearPayload)
+    .eq('list_id', LIST_ID)
+    .eq('item_state', 'completed')
+    .then(function(res) {
+      window._localChange = false;
+      if (res.error) console.error('clearCompleted error:', res.error);
+    });
 };
 
 window.doClearAll = function() {
   if (!window.items.length) return;
-  // Update local state immediately
+  // Capturar IDs ANTES de mutar el estado local
+  var checkedIds = window.items.filter(function(i) { return i.item_state === 'checked'; }).map(function(i) { return i.id; });
+  var completedIds = window.items.filter(function(i) { return i.item_state === 'completed'; }).map(function(i) { return i.id; });
+  // Actualizar local inmediatamente
   window.items.forEach(function(i) { i.item_state = 'unchecked'; i.is_checked = false; });
   window.renderPage();
   document.getElementById('modal-clear-all').classList.add('hidden');
   window._localChange = true;
-  // Update checked items first, then completed — both filter by list_id (RLS-safe)
   var allPayload = { item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null };
-  var allTs = new Date().toISOString();
-  queueOp({ type: 'update_items_batch', ids: allIds, data: allPayload, _ts: allTs });
-  if (window._isOnline) {
-    Promise.all([
-      db.from('items').update(allPayload).eq('list_id', LIST_ID).eq('item_state', 'checked'),
-      db.from('items').update(allPayload).eq('list_id', LIST_ID).eq('item_state', 'completed')
-    ]).then(function(results) {
-      window._localChange = false;
-      var hasError = results.some(function(r){ return r.error; });
-      if (!hasError) { var q = getQueue().filter(function(x){ return x.type !== 'update_items_batch' || JSON.stringify(x.ids) !== JSON.stringify(allIds); }); saveQueue(q); }
-      results.forEach(function(r) { if (r.error) console.error('doClearAll error:', r.error); });
-    });
-  } else { window._localChange = false; }
+  Promise.all([
+    checkedIds.length
+      ? db.from('items').update(allPayload).eq('list_id', LIST_ID).eq('item_state', 'checked')
+      : Promise.resolve({ error: null }),
+    completedIds.length
+      ? db.from('items').update(allPayload).eq('list_id', LIST_ID).eq('item_state', 'completed')
+      : Promise.resolve({ error: null })
+  ]).then(function(results) {
+    window._localChange = false;
+    results.forEach(function(r) { if (r.error) console.error('doClearAll error:', r.error); });
+  });
 };
 
 window.openInviteModal = function() { document.getElementById('inv-email').value = ''; document.getElementById('modal-invite').classList.remove('hidden'); setTimeout(function(){ document.getElementById('inv-email').focus(); }, 100); applyTranslations(); };
