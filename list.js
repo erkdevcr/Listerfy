@@ -30,6 +30,108 @@
   document.head.appendChild(s);
 })();
 
+
+// ═══════════════════════════════════════════════════════════
+// OFFLINE SYNC SYSTEM
+// Cola de operaciones pendientes + merge por timestamp
+// ═══════════════════════════════════════════════════════════
+var QUEUE_KEY = 'listerfy_pending_' + (new URLSearchParams(location.search).get('id') || '');
+window._isOnline = navigator.onLine;
+
+window.addEventListener('online',  function() { window._isOnline = true;  flushQueue(); });
+window.addEventListener('offline', function() { window._isOnline = false; });
+
+function queueOp(op) {
+  op._ts = new Date().toISOString();
+  op._id = Math.random().toString(36).slice(2);
+  var q = getQueue();
+  // Deduplicar: si ya hay una op del mismo tipo + itemId, reemplazar
+  if (op.itemId) {
+    q = q.filter(function(x) { return !(x.type === op.type && x.itemId === op.itemId); });
+  }
+  q.push(op);
+  saveQueue(q);
+}
+function getQueue() {
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveQueue(q) {
+  try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch(e) {}
+}
+function clearQueue() { localStorage.removeItem(QUEUE_KEY); }
+
+async function flushQueue() {
+  if (!window._isOnline) return;
+  var q = getQueue();
+  if (!q.length) return;
+  var sent = [];
+  for (var i = 0; i < q.length; i++) {
+    var op = q[i];
+    try {
+      if (op.type === 'update_item_state') {
+        // Comparar timestamp: solo actualizar si nuestro cambio es más reciente
+        var res = await db.from('items').select('updated_at').eq('id', op.itemId).single();
+        if (!res.data || new Date(op._ts) >= new Date(res.data.updated_at || 0)) {
+          await db.from('items').update({
+            item_state: op.data.item_state,
+            is_checked: op.data.is_checked,
+            checked_by: op.data.checked_by,
+            checked_at: op.data.checked_at
+          }).eq('id', op.itemId);
+        }
+        sent.push(op._id);
+      } else if (op.type === 'update_items_batch') {
+        // Clear completed / clear all — actualizar los que tenemos timestamp más reciente
+        for (var j = 0; j < op.ids.length; j++) {
+          var res2 = await db.from('items').select('updated_at').eq('id', op.ids[j]).single();
+          if (!res2.data || new Date(op._ts) >= new Date(res2.data.updated_at || 0)) {
+            await db.from('items').update(op.data).eq('id', op.ids[j]);
+          }
+        }
+        sent.push(op._id);
+      } else if (op.type === 'insert_item') {
+        await db.from('items').insert(op.data);
+        sent.push(op._id);
+      } else if (op.type === 'delete_item') {
+        await db.from('items').delete().eq('id', op.itemId);
+        sent.push(op._id);
+      }
+    } catch(e) {
+      // Sin conexión o error → dejar en cola
+    }
+  }
+  if (sent.length) {
+    var remaining = getQueue().filter(function(x) { return !sent.includes(x._id); });
+    saveQueue(remaining);
+    // Recargar desde DB para sincronizar
+    if (sent.length) reloadItemsFromDB();
+  }
+}
+
+// Merge inteligente: respeta cambios locales pendientes
+function mergeWithLocal(dbItems) {
+  var q = getQueue();
+  if (!q.length) return dbItems;
+  // Crear mapa de cambios locales pendientes por itemId
+  var localChanges = {};
+  q.forEach(function(op) {
+    if (op.itemId) localChanges[op.itemId] = op;
+  });
+  return dbItems.map(function(dbItem) {
+    var localOp = localChanges[dbItem.id];
+    if (!localOp) return dbItem;
+    // Si nuestro cambio local es más reciente → conservar local
+    if (new Date(localOp._ts) > new Date(dbItem.updated_at || 0)) {
+      var merged = Object.assign({}, dbItem);
+      if (localOp.type === 'update_item_state') {
+        Object.assign(merged, localOp.data);
+      }
+      return merged;
+    }
+    return dbItem; // DB ganó (otro usuario cambió después)
+  });
+}
+
 var LIST_ID = new URLSearchParams(location.search).get('id');
 window.currentUser = null;
 window.categories = [];
@@ -188,16 +290,34 @@ window.cycleState = function(id) {
   var next = state === 'unchecked' ? 'checked' : (state === 'checked' ? 'completed' : 'checked');
 
   function applyStateChange() {
-    item.item_state = next;
-    window._localChange = true; clearTimeout(window._localChangeTimer);
-    window._localChangeTimer = setTimeout(function() { window._localChange = false; }, 2000);
-    window.renderPage();
-    db.from('items').update({
+    var ts = new Date().toISOString();
+    var payload = {
       item_state: next,
       is_checked: next !== 'unchecked',
       checked_by: next !== 'unchecked' ? window.currentUser.id : null,
-      checked_at: next !== 'unchecked' ? new Date().toISOString() : null
-    }).eq('id', id).then(function() { window._localChange = false; clearTimeout(window._localChangeTimer); });
+      checked_at: next !== 'unchecked' ? ts : null
+    };
+    // Actualizar local inmediatamente
+    item.item_state = next;
+    item._localTs = ts;
+    window._localChange = true; clearTimeout(window._localChangeTimer);
+    window._localChangeTimer = setTimeout(function() { window._localChange = false; }, 2000);
+    window.renderPage();
+    // Encolar operación
+    queueOp({ type: 'update_item_state', itemId: id, data: payload });
+    // Intentar enviar
+    if (window._isOnline) {
+      db.from('items').update(payload).eq('id', id).then(function(res) {
+        window._localChange = false; clearTimeout(window._localChangeTimer);
+        if (!res.error) {
+          // Limpiar de la cola si se envió correctamente
+          var q = getQueue().filter(function(x) { return !(x.type === 'update_item_state' && x.itemId === id); });
+          saveQueue(q);
+        }
+      });
+    } else {
+      window._localChange = false;
+    }
   }
 
   // Solo aplicar efecto visual al tocar ítems azules (unchecked → checked)
@@ -358,14 +478,16 @@ window.clearCompleted = function() {
   window.renderPage();
   window._localChange = true;
   // Filter by list_id + item_state — RLS-safe single query
-  db.from('items')
-    .update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null })
-    .eq('list_id', LIST_ID)
-    .eq('item_state', 'completed')
-    .then(function(res) {
-      window._localChange = false;
-      if (res.error) console.error('clearCompleted error:', res.error);
-    });
+  var clearPayload = { item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null };
+  queueOp({ type: 'update_items_batch', ids: completedIds, data: clearPayload });
+  if (window._isOnline) {
+    db.from('items').update(clearPayload).eq('list_id', LIST_ID).eq('item_state', 'completed')
+      .then(function(res) {
+        window._localChange = false;
+        if (!res.error) { var q = getQueue().filter(function(x){ return x.type !== 'update_items_batch' || JSON.stringify(x.ids) !== JSON.stringify(completedIds); }); saveQueue(q); }
+        if (res.error) console.error('clearCompleted error:', res.error);
+      });
+  } else { window._localChange = false; }
 };
 
 window.doClearAll = function() {
@@ -376,19 +498,19 @@ window.doClearAll = function() {
   document.getElementById('modal-clear-all').classList.add('hidden');
   window._localChange = true;
   // Update checked items first, then completed — both filter by list_id (RLS-safe)
-  Promise.all([
-    db.from('items')
-      .update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null })
-      .eq('list_id', LIST_ID)
-      .eq('item_state', 'checked'),
-    db.from('items')
-      .update({ item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null })
-      .eq('list_id', LIST_ID)
-      .eq('item_state', 'completed')
-  ]).then(function(results) {
-    window._localChange = false;
-    results.forEach(function(r) { if (r.error) console.error('doClearAll error:', r.error); });
-  });
+  var allPayload = { item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null };
+  queueOp({ type: 'update_items_batch', ids: allIds, data: allPayload });
+  if (window._isOnline) {
+    Promise.all([
+      db.from('items').update(allPayload).eq('list_id', LIST_ID).eq('item_state', 'checked'),
+      db.from('items').update(allPayload).eq('list_id', LIST_ID).eq('item_state', 'completed')
+    ]).then(function(results) {
+      window._localChange = false;
+      var hasError = results.some(function(r){ return r.error; });
+      if (!hasError) { var q = getQueue().filter(function(x){ return x.type !== 'update_items_batch' || JSON.stringify(x.ids) !== JSON.stringify(allIds); }); saveQueue(q); }
+      results.forEach(function(r) { if (r.error) console.error('doClearAll error:', r.error); });
+    });
+  } else { window._localChange = false; }
 };
 
 window.openInviteModal = function() { document.getElementById('inv-email').value = ''; document.getElementById('modal-invite').classList.remove('hidden'); setTimeout(function(){ document.getElementById('inv-email').focus(); }, 100); applyTranslations(); };
@@ -451,8 +573,12 @@ window.renderCatOptions = function(selectId, selectedId) {
 function reloadItemsFromDB() {
   db.from('items').select('*, categories(name_es, name_en, icon)').eq('list_id', LIST_ID).order('created_at', { ascending: true }).then(function(r) {
     if (!r.data) return;
-    var changed = JSON.stringify(r.data.map(function(i){ return i.id + i.item_state; })) !== JSON.stringify(window.items.map(function(i){ return i.id + i.item_state; }));
-    if (changed) { window.items = r.data; window.renderPage(); }
+    // Merge con cambios locales pendientes (offline sync)
+    var merged = mergeWithLocal(r.data);
+    var changed = JSON.stringify(merged.map(function(i){ return i.id + i.item_state; })) !== JSON.stringify(window.items.map(function(i){ return i.id + i.item_state; }));
+    if (changed) { window.items = merged; window.renderPage(); }
+    // Si hay ops pendientes, intentar enviarlas
+    if (getQueue().length && window._isOnline) flushQueue();
   });
 }
 
