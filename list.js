@@ -112,23 +112,44 @@ async function flushQueue() {
 function mergeWithLocal(dbItems) {
   var q = getQueue();
   if (!q.length) return dbItems;
-  // Crear mapa de cambios locales pendientes por itemId
+
+  // Mapa de cambios por itemId (para update_item_state)
   var localChanges = {};
   q.forEach(function(op) {
     if (op.itemId) localChanges[op.itemId] = op;
   });
+
+  // Mapa de batch ops: id → data (para update_items_batch)
+  var batchChanges = {};
+  q.forEach(function(op) {
+    if (op.type === 'update_items_batch' && op.ids) {
+      op.ids.forEach(function(id) {
+        // Si aún no hay un cambio individual más reciente, aplicar batch
+        if (!batchChanges[id] || new Date(op._ts) > new Date(batchChanges[id]._ts)) {
+          batchChanges[id] = op;
+        }
+      });
+    }
+  });
+
   return dbItems.map(function(dbItem) {
+    var dbTs = new Date(dbItem.updated_at || 0);
+
+    // Primero revisar cambio individual (más específico)
     var localOp = localChanges[dbItem.id];
-    if (!localOp) return dbItem;
-    // Si nuestro cambio local es más reciente → conservar local
-    if (new Date(localOp._ts) > new Date(dbItem.updated_at || 0)) {
+    if (localOp && new Date(localOp._ts) > dbTs) {
       var merged = Object.assign({}, dbItem);
-      if (localOp.type === 'update_item_state') {
-        Object.assign(merged, localOp.data);
-      }
+      Object.assign(merged, localOp.data);
       return merged;
     }
-    return dbItem; // DB ganó (otro usuario cambió después)
+
+    // Luego revisar batch
+    var batchOp = batchChanges[dbItem.id];
+    if (batchOp && new Date(batchOp._ts) > dbTs) {
+      return Object.assign({}, dbItem, batchOp.data);
+    }
+
+    return dbItem; // DB ganó
   });
 }
 
@@ -479,7 +500,8 @@ window.clearCompleted = function() {
   window._localChange = true;
   // Filter by list_id + item_state — RLS-safe single query
   var clearPayload = { item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null };
-  queueOp({ type: 'update_items_batch', ids: completedIds, data: clearPayload });
+  var clearTs = new Date().toISOString();
+  queueOp({ type: 'update_items_batch', ids: completedIds, data: clearPayload, _ts: clearTs });
   if (window._isOnline) {
     db.from('items').update(clearPayload).eq('list_id', LIST_ID).eq('item_state', 'completed')
       .then(function(res) {
@@ -499,7 +521,8 @@ window.doClearAll = function() {
   window._localChange = true;
   // Update checked items first, then completed — both filter by list_id (RLS-safe)
   var allPayload = { item_state: 'unchecked', is_checked: false, checked_by: null, checked_at: null };
-  queueOp({ type: 'update_items_batch', ids: allIds, data: allPayload });
+  var allTs = new Date().toISOString();
+  queueOp({ type: 'update_items_batch', ids: allIds, data: allPayload, _ts: allTs });
   if (window._isOnline) {
     Promise.all([
       db.from('items').update(allPayload).eq('list_id', LIST_ID).eq('item_state', 'checked'),
