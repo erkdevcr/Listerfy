@@ -240,9 +240,11 @@ window.toggleListMenu = function() {
 
 window.renderPage = function() {
   var sortedItems = window.items.slice().sort(function(a, b) { return (a.name||'').localeCompare(b.name||'', undefined, {sensitivity:'base'}); });
-  var unchecked = sortedItems.filter(function(i) { return (i.item_state||'unchecked') === 'unchecked'; });
-  var below = sortedItems.filter(function(i) { return i.item_state === 'checked' || i.item_state === 'completed'; });
-  var completed = sortedItems.filter(function(i) { return i.item_state === 'completed'; });
+  var unchecked  = sortedItems.filter(function(i) { return (i.item_state||'unchecked') === 'unchecked'; });
+  var checked    = sortedItems.filter(function(i) { return i.item_state === 'checked'; });
+  var completed  = sortedItems.filter(function(i) { return i.item_state === 'completed'; });
+  // Verdes primero (alfabético), tachados al final (alfabético)
+  var below = checked.concat(completed);
   var pct = window.items.length > 0 ? Math.round((below.length / window.items.length) * 100) : 0;
   var prog = document.getElementById('top-progress');
   if (prog) {
