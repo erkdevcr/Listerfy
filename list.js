@@ -443,8 +443,23 @@ window.editSelected = function() {
 };
 window.saveEdit = function() {
   var name = document.getElementById('edit-name').value.trim(); if (!name) return;
-  var qty = document.getElementById('edit-qty').value.trim() || null; var catId = document.getElementById('edit-cat').value || null;
-  db.from('items').update({ name: name, quantity: qty, category_id: catId }).eq('id', window._lastEditId).then(function() { document.getElementById('modal-edit').classList.add('hidden'); });
+  var qty = document.getElementById('edit-qty').value.trim() || null;
+  var catId = document.getElementById('edit-cat').value || null;
+  var id = window._lastEditId;
+  // Actualizar local inmediatamente
+  var item = window.items.find(function(i) { return i.id === id; });
+  if (item) {
+    item.name = name;
+    item.quantity = qty;
+    item.category_id = catId;
+    window._localChange = true;
+    window.renderPage();
+  }
+  document.getElementById('modal-edit').classList.add('hidden');
+  // Enviar a DB
+  db.from('items').update({ name: name, quantity: qty, category_id: catId }).eq('id', id).then(function() {
+    window._localChange = false;
+  });
 };
 
 window.openCopyModal = function() {
