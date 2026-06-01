@@ -1,4 +1,5 @@
 // list.js — Listerfy list view
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 (function() {
   // Logo SVG como CSS mask — se define UNA vez, el navegador lo aplica via CSS
   // sin repetir el path en cada ítem del DOM (100+ ítems no afectan el rendimiento)
@@ -209,6 +210,21 @@ window.loadAll = function() {
   });
 };
 
+window.updateListSubtitle = function() {
+  var sub = document.getElementById('list-subtitle');
+  if (!sub || !window.items) return;
+  var total = window.items.length;
+  var checked = window.items.filter(function(i) { return i.item_state === 'checked'; }).length;
+  var completed = window.items.filter(function(i) { return i.item_state === 'completed'; }).length;
+  if (total === 0) { sub.innerHTML = ''; return; }
+  var html = total + ' ' + t('items');
+  if (checked > 0 || completed > 0) {
+    html += ' (<span style="color:var(--brand);font-weight:700">' + checked + '</span>'
+          + '/<span style="color:var(--red);font-weight:700">' + completed + '</span>)';
+  }
+  sub.innerHTML = html;
+};
+
 window.renderTopbar = function() {
   document.getElementById('list-title').textContent = window.listData.name;
   var isOwner = window.listData.owner_id === window.currentUser.id;
@@ -218,8 +234,19 @@ window.renderTopbar = function() {
     if (url) return '<div class="avatar avatar-sm" style="background:' + avatarColor(name) + ';padding:0;overflow:hidden"><img src="' + url + '" width="100%" height="100%" style="object-fit:cover;border-radius:50%;display:block"></div>';
     return '<div class="avatar avatar-sm" style="background:' + avatarColor(name) + '">' + avatarInitials(name) + '</div>';
   }).join('');
+  var sortActive = window._sortMode !== 'alpha';
+  var sortSVG = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M3 7H21M6 12H18M10 17H14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+  var chk = '<span style="color:var(--brand);margin-right:4px">✓</span>';
+  var nochk = '<span style="margin-right:4px;opacity:0">✓</span>';
   document.getElementById('topbar-actions').innerHTML =
     '<div class="avatar-stack" onclick="openMembersModal()" style="cursor:pointer">' + avatars + '</div>' +
+    '<div class="dropdown-wrap" style="position:relative">' +
+      '<button class="btn btn-ghost btn-icon" id="btn-sort" onclick="toggleSortMenu()" style="padding:8px' + (sortActive ? ';color:var(--brand)' : '') + '">' + sortSVG + '</button>' +
+      '<div class="dropdown-menu hidden" id="sort-menu" style="right:0;top:40px;min-width:160px">' +
+        '<button class="dropdown-item" onclick="setSortMode(\'alpha\')">' + (window._sortMode === 'alpha' ? chk : nochk) + t('sortAlpha') + '</button>' +
+        '<button class="dropdown-item" onclick="setSortMode(\'category\')">' + (window._sortMode === 'category' ? chk : nochk) + t('sortByCategory') + '</button>' +
+      '</div>' +
+    '</div>' +
     '<div class="dropdown-wrap" style="position:relative">' +
       '<button class="btn btn-ghost btn-icon" onclick="toggleListMenu()">⋮</button>' +
       '<div class="dropdown-menu hidden" id="list-menu" style="right:0;top:40px">' +
@@ -229,6 +256,7 @@ window.renderTopbar = function() {
           : '<button class="dropdown-item danger" onclick="confirmLeaveList()"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="15" height="15"><path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15M10 17L15 12M15 12L10 7M15 12H3" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> ' + t('leaveList') + '</button>') +
       '</div>' +
     '</div>';
+  window.updateListSubtitle();
 };
 
 window.toggleListMenu = function() {
@@ -236,6 +264,45 @@ window.toggleListMenu = function() {
   if (!m.classList.contains('hidden')) {
     setTimeout(function() { document.addEventListener('click', function h() { m.classList.add('hidden'); document.removeEventListener('click', h); }); }, 0);
   }
+};
+
+window._sortMode = localStorage.getItem('sortMode') || 'alpha';
+
+window._demoTimer = null;
+window.runDemoAnimation = function() {
+  // Reset all 3 circles to blue
+  for (var n = 1; n <= 3; n++) {
+    var c = document.getElementById('demo-circle-' + n);
+    var r = document.getElementById('demo-row-' + n);
+    if (!c || !r) continue;
+    c.className = 'item-circle';
+    c.style.opacity = '1';
+    c.style.transform = '';
+    r.style.animation = 'none';
+    void c.offsetWidth;
+  }
+
+  function animateRow(n) {
+    var circle = document.getElementById('demo-circle-' + n);
+    var row = document.getElementById('demo-row-' + n);
+    if (!circle || !row) return;
+
+    row.style.animation = 'item-tap-glow-slow 0.55s ease-out forwards';
+    circle.classList.add('state-checked');
+    void circle.offsetWidth;
+    circle.classList.add('demo-circle-popping');
+
+    window._demoTimer = setTimeout(function() {
+      circle.classList.remove('demo-circle-popping');
+      circle.style.opacity = '1';
+      circle.style.transform = 'scale(1.22)';
+      if (n < 3) {
+        window._demoTimer = setTimeout(function() { animateRow(n + 1); }, 350);
+      }
+    }, 750);
+  }
+
+  window._demoTimer = setTimeout(function() { animateRow(1); }, 500);
 };
 
 window._shoppingMode = false;
@@ -247,6 +314,8 @@ window.toggleShoppingMode = function() {
     });
     if (!hasMarked) {
       document.getElementById('modal-shopping-empty').classList.remove('hidden');
+      clearTimeout(window._demoTimer);
+      requestAnimationFrame(window.runDemoAnimation);
       return;
     }
   }
@@ -266,27 +335,25 @@ window.toggleShoppingMode = function() {
       if (pill) pill.classList.add('hidden');
     }
   }
-  // Ambas direcciones: desvanecer → render → scroll arriba → aparecer
-  var pc = document.getElementById('page-content');
-  if (pc) {
-    pc.style.transition = 'opacity 0.15s ease';
-    pc.style.opacity = '0';
+  // Curtain cubre toda la pantalla → render + scroll → curtain desaparece
+  var curtain = document.getElementById('mode-curtain');
+  if (curtain) {
+    curtain.style.opacity = '1';
+    curtain.style.pointerEvents = 'all';
     setTimeout(function() {
       window._skipFlip = true;
-      pc.style.overflowY = 'hidden';
-      pc.scrollTop = 0;
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      window.scrollTo(0, 0);
       window.renderPage();
-      pc.scrollTop = 0;
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-      window.scrollTo(0, 0);
-      pc.style.overflowY = '';
+      // Esperar al siguiente frame (después del layout del browser) para resetear scroll
       requestAnimationFrame(function() {
-        pc.style.opacity = '1';
-        setTimeout(function() { pc.style.transition = ''; pc.style.opacity = ''; }, 160);
+        var pc = document.getElementById('page-content');
+        var page = document.querySelector('.page');
+        if (pc) pc.scrollTop = 0;
+        if (page) page.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        window.scrollTo(0, 0);
+        curtain.style.opacity = '0';
+        curtain.style.pointerEvents = 'none';
       });
     }, 160);
   } else {
@@ -295,8 +362,49 @@ window.toggleShoppingMode = function() {
   }
 };
 
+window.toggleSortMenu = function() {
+  var m = document.getElementById('sort-menu'); if (!m) return;
+  m.classList.toggle('hidden');
+  if (!m.classList.contains('hidden')) {
+    setTimeout(function() { document.addEventListener('click', function h() { m.classList.add('hidden'); document.removeEventListener('click', h); }); }, 0);
+  }
+};
+window.setSortMode = function(mode) {
+  window._sortMode = mode;
+  localStorage.setItem('sortMode', mode);
+  var m = document.getElementById('sort-menu'); if (m) m.classList.add('hidden');
+  window.renderTopbar();
+  window.renderPage();
+};
+
+function renderItemsList(items) {
+  if (window._sortMode !== 'category') {
+    return items.map(function(i) { return window.renderItem(i); }).join('');
+  }
+  var html = '';
+  var lastCat = undefined;
+  items.forEach(function(i) {
+    var catName = i.categories ? (currentLang === 'es' ? i.categories.name_es : i.categories.name_en) : t('uncategorized');
+    var catIcon = i.categories ? i.categories.icon : '';
+    if (catName !== lastCat) {
+      html += '<div style="padding:7px 16px 3px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)">' + (catIcon ? catIcon + ' ' : '') + esc(catName) + '</div>';
+      lastCat = catName;
+    }
+    html += window.renderItem(i);
+  });
+  return html;
+}
+
 window.renderPage = function() {
-  var sortedItems = window.items.slice().sort(function(a, b) { return (a.name||'').localeCompare(b.name||'', undefined, {sensitivity:'base'}); });
+  var sortedItems = window.items.slice().sort(window._sortMode === 'category'
+    ? function(a, b) {
+        var catA = a.categories ? (currentLang === 'es' ? a.categories.name_es : a.categories.name_en) : '￿';
+        var catB = b.categories ? (currentLang === 'es' ? b.categories.name_es : b.categories.name_en) : '￿';
+        var cmp = catA.localeCompare(catB, undefined, {sensitivity:'base'});
+        return cmp !== 0 ? cmp : (a.name||'').localeCompare(b.name||'', undefined, {sensitivity:'base'});
+      }
+    : function(a, b) { return (a.name||'').localeCompare(b.name||'', undefined, {sensitivity:'base'}); }
+  );
   var unchecked  = sortedItems.filter(function(i) { return (i.item_state||'unchecked') === 'unchecked'; });
   var checked    = sortedItems.filter(function(i) { return i.item_state === 'checked'; });
   var completed  = sortedItems.filter(function(i) { return i.item_state === 'completed'; });
@@ -332,13 +440,17 @@ window.renderPage = function() {
     // Salir del modo compras silenciosamente si ya no quedan marcados
     window._shoppingMode = false;
     var _smBtn = document.getElementById('btn-shopping-mode');
-    if (_smBtn) _smBtn.classList.remove('active');
+    if (_smBtn) {
+      _smBtn.classList.remove('active');
+      var _smLabel = _smBtn.querySelector('[data-i18n]');
+      if (_smLabel) _smLabel.textContent = t('shoppingMode');
+    }
     var _smPill = document.getElementById('add-pill');
     if (_smPill) _smPill.classList.remove('hidden');
   }
   if (window._shoppingMode) {
     // Modo compras: solo verdes y rojos
-    html += below.map(function(i) { return window.renderItem(i); }).join('');
+    html += renderItemsList(below);
     html += '<div style="display:flex;gap:10px;padding:16px;margin-top:8px">';
     if (completed.length > 0) html += '<button class="btn btn-outline btn-full" onclick="document.getElementById(\'modal-clear-completed\').classList.remove(\'hidden\')">' + t('clearCompleted') + '</button>';
     html += '<button class="btn btn-danger btn-full" onclick="document.getElementById(\'modal-clear-all\').classList.remove(\'hidden\')">' + t('clearAll') + '</button>';
@@ -346,10 +458,10 @@ window.renderPage = function() {
   } else if (window.items.length === 0) {
     html = '<div class="empty-state"><div class="empty-icon">🛒</div><h3>' + t('noItems') + '</h3><p>' + t('noItemsHint') + '</p></div>';
   } else {
-    html += unchecked.map(function(i) { return window.renderItem(i); }).join('');
+    html += renderItemsList(unchecked);
     if (below.length > 0) {
       html += '<div style="padding:10px 16px 8px;background:var(--bg-3);border-top:1px solid var(--border-2);border-bottom:1px solid var(--border-2);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)">(' + below.length + ') ' + t('checkedItems') + '</div>';
-      html += below.map(function(i) { return window.renderItem(i); }).join('');
+      html += renderItemsList(below);
     }
     if (below.length > 0) {
       html += '<div style="display:flex;gap:10px;padding:16px;margin-top:8px">';
@@ -385,6 +497,7 @@ window.renderPage = function() {
       }
     }
   });
+  window.updateListSubtitle();
 };
 
 window.renderItem = function(item) {
@@ -404,7 +517,7 @@ window.renderItem = function(item) {
     '<span class="item-name" style="' + nameStyle + '" onclick="if(window._longPressFired){window._longPressFired=false;return;} window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')">' +
       '<span class="item-text-inner" style="' + innerStyle + '">' + esc(item.name) + '</span>' + (item.quantity ? ' <span style="color:var(--text-3);font-size:var(--fs-xs)">' + esc(item.quantity) + '</span>' : '') +
     '</span>' +
-    '<div class="item-cat-icon">' + catIcon + '</div>' +
+    '<div class="item-cat-icon" onclick="if(window._longPressFired)return;event.stopPropagation();openCatPicker(\'' + item.id + '\')">' + catIcon + '</div>' +
     '</div>';
 };
 
@@ -556,6 +669,7 @@ window.selectItem = function(id) {
     document.getElementById('action-bar').classList.remove('hidden');
     document.getElementById('add-pill').classList.add('hidden');
     document.getElementById('btn-action-edit').style.display = '';
+    document.getElementById('btn-action-edit').textContent = t('edit');
     document.getElementById('action-bar-info').textContent = '';
     var b = document.getElementById('back-btn'); b.textContent = '✕'; b.onclick = window.clearSelection;
     window._multiSelectMode = true;
@@ -567,8 +681,8 @@ window.selectItem = function(id) {
   var count = window.selectedItemIds.length;
   var info = document.getElementById('action-bar-info'); var editBtn = document.getElementById('btn-action-edit');
   if (count === 0) { window.clearSelection(); return; }
-  else if (count === 1) { info.textContent = '1 ' + t('selected1'); editBtn.style.display = ''; }
-  else { info.textContent = count + ' ' + t('selectedN'); editBtn.style.display = 'none'; }
+  else if (count === 1) { info.textContent = '1 ' + t('selected1'); editBtn.style.display = ''; editBtn.textContent = t('edit'); }
+  else { info.textContent = count + ' ' + t('selectedN'); editBtn.style.display = ''; editBtn.textContent = t('editCategory'); }
 };
 
 window.clearSelection = function() {
@@ -578,11 +692,137 @@ window.clearSelection = function() {
   document.querySelectorAll('.item-row').forEach(function(r) { r.classList.remove('selected'); });
   var b = document.getElementById('back-btn');
   b.innerHTML = '<svg viewBox="0 0 492 492" xmlns="http://www.w3.org/2000/svg" fill="#436e60" width="26" height="26"><path d="M7.86,265.12l177.68,177.68c5.07,5.07,11.83,7.86,19.04,7.86s13.97-2.79,19.04-7.86l16.13-16.14c5.07-5.06,7.86-11.83,7.86-19.04s-2.79-14.2-7.86-19.26l-103.66-103.88h329.32c14.85,0,26.58-11.62,26.58-26.48v-22.81c0-14.85-11.73-27.65-26.58-27.65H134.93l104.83-104.46c5.07-5.07,7.86-11.65,7.86-18.86s-2.79-13.88-7.86-18.95l-16.13-16.08c-5.07-5.07-11.83-7.84-19.04-7.84s-13.97,2.8-19.04,7.87L7.86,226.9C2.78,231.99-.02,238.78,0,246c-.02,7.24,2.78,14.04,7.86,19.12Z"/></svg>';
-  b.onclick = function() { location.href='app.html'; };
+  b.onclick = function() { if (window._shoppingMode) { toggleShoppingMode(); } else { location.href='app.html'; } };
+};
+
+window._catEmojis = [
+  '🛒','🍎','🍊','🍋','🍇','🍓','🫐','🍒','🍑','🥝','🍅','🥑',
+  '🥦','🥕','🌽','🧅','🧄','🥔','🍆','🥒','🌶️','🫛',
+  '🥩','🍗','🐟','🥚','🧀','🥛','🧈','🍞','🥐','🥫','🧆',
+  '🍝','🍜','🍕','🍔','🌮','🥗','🍣','🍱','🧃','🥤','🍵','☕','🧋',
+  '🍷','🍺','🥃','🧊','🫙','🧂','🍯',
+  '🏠','🛁','🚿','🪥','🧴','🧼','🫧','🧽','🧹','🧺','🧻','🪣',
+  '💡','🔌','🛋️','🪑','🛏️','🪴','🖼️','🧸',
+  '💊','💉','🩺','🩹','🌡️',
+  '👕','👗','👟','👜','🧢','🧣','🧤','👓',
+  '📱','💻','🎮','🖨️','📷','🎧','🔋',
+  '📚','✏️','📝','🗂️','🖊️',
+  '🔧','🪛','🔨','🪚','🔑','🪝',
+  '🚗','⛽','🚲','✈️','🛺',
+  '🐕','🐈','🐠','🌱','🌸','🌿','🌙','⭐','🌈',
+  '💰','🏷️','🎁','🎵','🏃','🏋️','⚽','🎨','🎂','🕯️'
+];
+window._selectedCatEmoji = '';
+window._catPickerItemId = null;
+window.openCatPicker = function(itemId) {
+  window._catPickerItemId = itemId;
+  // Show grid, hide form
+  var grid = document.getElementById('cat-picker-grid');
+  var form = document.getElementById('cat-picker-form');
+  var title = document.getElementById('cat-picker-title');
+  var footer = document.getElementById('cat-picker-footer');
+  grid.style.display = 'grid';
+  form.style.display = 'none';
+  title.textContent = t('category');
+  footer.innerHTML = '<button class="btn btn-outline btn-full" onclick="document.getElementById(\'modal-cat-picker\').classList.add(\'hidden\')">' + t('cancel') + '</button>';
+
+  var item = window.items.find(function(i) { return i.id === itemId; });
+  grid.innerHTML = window.categories.map(function(c) {
+    var name = currentLang === 'es' ? c.name_es : c.name_en;
+    var sel = item && item.category_id === c.id;
+    return '<button onclick="changeCatQuick(\'' + c.id + '\',this)" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 4px;border-radius:10px;border:2px solid ' + (sel ? 'var(--brand)' : 'transparent') + ';background:' + (sel ? 'rgba(52,176,128,0.12)' : 'var(--bg-2)') + ';cursor:pointer;width:100%;box-sizing:border-box">' +
+      '<span style="font-size:1.7rem;line-height:1">' + c.icon + '</span>' +
+      '<span style="font-size:10px;font-weight:600;color:var(--text-3);text-align:center;line-height:1.2;word-break:break-word">' + esc(name) + '</span>' +
+      '</button>';
+  }).join('') +
+  '<button onclick="openNewCatForm()" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 4px;border-radius:10px;border:2px dashed var(--border-2);background:transparent;cursor:pointer;width:100%;box-sizing:border-box">' +
+    '<span style="font-size:1.7rem;line-height:1;color:var(--text-3)">+</span>' +
+    '<span style="font-size:10px;font-weight:600;color:var(--text-3);text-align:center;line-height:1.2">' + t('addCategory') + '</span>' +
+  '</button>';
+  document.getElementById('modal-cat-picker').classList.remove('hidden');
+};
+
+window.openNewCatForm = function() {
+  document.getElementById('cat-picker-grid').style.display = 'none';
+  document.getElementById('cat-picker-form').style.display = 'block';
+  document.getElementById('cat-picker-title').textContent = t('addCategory');
+  document.getElementById('cat-picker-footer').innerHTML =
+    '<button class="btn btn-outline" onclick="openCatPicker(window._catPickerItemId)">' + t('back') + '</button>' +
+    '<button class="btn btn-brand" id="btn-save-new-cat" onclick="saveNewCat()">' + t('save') + '</button>';
+  window._selectedCatEmoji = '';
+  document.getElementById('new-cat-name').value = '';
+  // Populate emoji grid
+  document.getElementById('emoji-grid').innerHTML = window._catEmojis.map(function(em) {
+    return '<button data-emoji="' + em + '" onclick="selectCatEmoji(this)" style="font-size:1.45rem;padding:5px;border-radius:8px;border:2px solid transparent;background:transparent;cursor:pointer;line-height:1;aspect-ratio:1;display:flex;align-items:center;justify-content:center">' + em + '</button>';
+  }).join('');
+  setTimeout(function() { document.getElementById('new-cat-name').focus(); }, 80);
+};
+
+window.selectCatEmoji = function(btn) {
+  window._selectedCatEmoji = btn.dataset.emoji;
+  document.querySelectorAll('#emoji-grid button').forEach(function(b) {
+    b.style.border = '2px solid transparent';
+    b.style.background = 'transparent';
+  });
+  btn.style.border = '2px solid var(--brand)';
+  btn.style.background = 'rgba(52,176,128,0.18)';
+};
+
+window.saveNewCat = function() {
+  var icon = window._selectedCatEmoji;
+  var name = document.getElementById('new-cat-name').value.trim();
+  if (!icon || !name) return;
+  var btn = document.getElementById('btn-save-new-cat');
+  if (btn) { btn.disabled = true; btn.textContent = t('saving'); }
+  db.from('categories').insert({ icon: icon, name_es: name, name_en: name }).select().single().then(function(res) {
+    if (btn) { btn.disabled = false; btn.textContent = t('save'); }
+    if (res.error) { showToast(t('errorGeneral'), 'error'); return; }
+    window.categories.unshift(res.data);
+    window.renderCatOptions('item-cat');
+    window.renderCatOptions('edit-cat');
+    window.changeCatQuick(res.data.id, null);
+  });
+};
+
+window.changeCatQuick = function(catId, btn) {
+  if (btn) { btn.classList.add('cat-btn-tapping'); }
+  var cat = window.categories.find(function(c) { return c.id === catId; });
+  var catObj = cat ? { name_es: cat.name_es, name_en: cat.name_en, icon: cat.icon } : null;
+  var ids = (window._catPickerMultiIds && window._catPickerMultiIds.length > 0)
+    ? window._catPickerMultiIds.slice()
+    : (window._catPickerItemId ? [window._catPickerItemId] : []);
+  window._catPickerMultiIds = null;
+  ids.forEach(function(id) {
+    var item = window.items.find(function(i) { return i.id === id; });
+    if (!item) return;
+    item.category_id = catId;
+    item.categories = catObj;
+  });
+  setTimeout(function() {
+    document.getElementById('modal-cat-picker').classList.add('hidden');
+    window.clearSelection();
+    window.renderPage();
+    window._localChange = true;
+    clearTimeout(window._localChangeTimer);
+    Promise.all(ids.map(function(id) {
+      return db.from('items').update({ category_id: catId }).eq('id', id);
+    })).then(function() {
+      window._localChange = false;
+      clearTimeout(window._localChangeTimer);
+    });
+    window._localChangeTimer = setTimeout(function() { window._localChange = false; }, 4000);
+  }, 240);
 };
 
 window._lastEditId = null;
 window.editSelected = function() {
+  if (window.selectedItemIds.length > 1) {
+    // Multi-select: open cat picker to change category for all selected items
+    window._catPickerMultiIds = window.selectedItemIds.slice();
+    window._catPickerItemId = null;
+    window.openCatPicker(null);
+    return;
+  }
   var item = window.items.find(function(i) { return i.id === window.selectedItemId; }); if (!item) return;
   window._lastEditId = window.selectedItemId;
   document.getElementById('edit-name').value = item.name; document.getElementById('edit-qty').value = item.quantity || '';
@@ -600,6 +840,8 @@ window.saveEdit = function() {
     item.name = name;
     item.quantity = qty;
     item.category_id = catId;
+    var cat = window.categories.find(function(c) { return c.id === catId; });
+    item.categories = cat ? { name_es: cat.name_es, name_en: cat.name_en, icon: cat.icon } : null;
     window._localChange = true;
     window.renderPage();
   }

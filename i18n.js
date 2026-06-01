@@ -24,7 +24,7 @@ const i18n = {
     confirmClearAll: '¿Seguro que quieres limpiar todo?',
     confirmClearCompleted: '¿Limpiar todos los tachados?', yes: 'Sí, limpiar',
     cancel: 'Cancelar', confirmDelete: '¿Eliminar este artículo?',
-    delete: 'Eliminar', edit: 'Editar', copy: 'Copiar', copyTo: 'Copiar a lista',
+    delete: 'Eliminar', edit: 'Editar', editCategory: 'Editar categoría', copy: 'Copiar', copyTo: 'Copiar a lista',
     selectList: 'Selecciona una lista', members: 'Miembros', invite: 'Compartir',
     inviteEmail: 'Correo a invitar', sendInvite: 'Enviar invitación',
     sending: 'Enviando...', inviteSent: 'Invitación enviada',
@@ -39,7 +39,7 @@ const i18n = {
     currentPassword: 'Contraseña actual', addCategory: 'Nueva categoría',
     categoryName: 'Nombre', categoryIcon: 'Emoji', newItems: 'NUEVOS',
     errorGeneral: 'Algo salió mal. Intenta de nuevo.',
-    selected1: 'seleccionado', selectedN: 'seleccionados',
+    selected1: 'Seleccionado', selectedN: 'Seleccionados',
     you: 'tú', noMembers: 'Sin participantes',
     account: 'Cuenta', preferences: 'Preferencias', listCopy: '(copia)',
     deleteAccountConfirm: '¿Eliminar tu cuenta permanentemente?\n\nEsto borrará tu cuenta y todas tus listas. Esta acción no se puede deshacer.',
@@ -48,9 +48,12 @@ const i18n = {
     deleteAccountCancelled: 'Cancelado. Debes escribir exactamente ELIMINAR.',
     screenAwake: 'Pantalla siempre encendida',
     screenAwakeHint: 'Evita que la pantalla se apague al ver una lista',
-    shoppingMode: 'Modo compras',
+    shoppingMode: 'Solo marcados',
     shoppingModeExit: 'Ver lista',
     shoppingModeEmpty: 'Aún no has marcado artículos',
+    sortAlpha: 'Alfabético',
+    sortByCategory: 'Por categoría',
+    uncategorized: 'Sin categoría',
     // Papelera
     trash: 'Papelera',
     trashEmpty: 'La papelera está vacía',
@@ -91,7 +94,7 @@ const i18n = {
     confirmClearAll: 'Are you sure you want to clear everything?',
     confirmClearCompleted: 'Clear all completed items?', yes: 'Yes, clear',
     cancel: 'Cancel', confirmDelete: 'Delete this item?',
-    delete: 'Delete', edit: 'Edit', copy: 'Copy', copyTo: 'Copy to list',
+    delete: 'Delete', edit: 'Edit', editCategory: 'Edit category', copy: 'Copy', copyTo: 'Copy to list',
     selectList: 'Select a list', members: 'Members', invite: 'Share',
     inviteEmail: 'Email to invite', sendInvite: 'Send invitation',
     sending: 'Sending...', inviteSent: 'Invitation sent',
@@ -106,7 +109,7 @@ const i18n = {
     currentPassword: 'Current password', addCategory: 'New category',
     categoryName: 'Name', categoryIcon: 'Emoji', newItems: 'NEW',
     errorGeneral: 'Something went wrong. Please try again.',
-    selected1: 'selected', selectedN: 'selected',
+    selected1: 'Selected', selectedN: 'Selected',
     you: 'you', noMembers: 'No participants',
     account: 'Account', preferences: 'Preferences', listCopy: '(copy)',
     deleteAccountConfirm: 'Permanently delete your account?\n\nThis will delete your account and all your lists. This action cannot be undone.',
@@ -115,9 +118,12 @@ const i18n = {
     deleteAccountCancelled: 'Cancelled. You must type exactly DELETE.',
     screenAwake: 'Keep screen on',
     screenAwakeHint: 'Prevents screen from turning off while viewing a list',
-    shoppingMode: 'Shop mode',
+    shoppingMode: 'Only checked',
     shoppingModeExit: 'View list',
     shoppingModeEmpty: 'No items checked yet',
+    sortAlpha: 'Alphabetical',
+    sortByCategory: 'By category',
+    uncategorized: 'Uncategorized',
     // Trash
     trash: 'Trash',
     trashEmpty: 'Trash is empty',
@@ -156,3 +162,4 @@ function applyPrefs() {
   document.body.classList.add('font-' + fontSize);
 }
 applyPrefs();
+applyTranslations();
