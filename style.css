@@ -212,18 +212,29 @@ body {
   border-top:none; border-left:none;
   transform:rotate(42deg) translate(-1px,-1px); display:block;
 }
-.item-name { flex:1; font-size:var(--fs-base); color:var(--text-1); font-weight:500; position:relative; }
+.item-name { flex:1; font-size:var(--fs-base); color:var(--text-1); font-weight:500; }
+
+.item-text-inner { position:relative; display:inline-block; }
 
 @keyframes strike-ltr {
   from { transform:scaleX(0); }
   to   { transform:scaleX(1); }
 }
-.item-name.striking { color:var(--completed-text); }
-.item-name.striking::after {
-  content:''; position:absolute; left:0; top:50%;
+@keyframes unstrike-rtl {
+  from { transform:scaleX(1); }
+  to   { transform:scaleX(0); }
+}
+.item-text-inner.striking::after {
+  content:''; position:absolute; left:0; top:50%; margin-top:-1px;
   width:100%; height:2px; background:#ef4444;
   transform:scaleX(0); transform-origin:left;
-  animation:strike-ltr 0.28s ease forwards;
+  animation:strike-ltr 0.2s ease forwards;
+}
+.item-text-inner.unstriking::after {
+  content:''; position:absolute; left:0; top:50%; margin-top:-1px;
+  width:100%; height:2px; background:#ef4444;
+  transform-origin:right;
+  animation:unstrike-rtl 0.2s ease forwards;
 }
 .item-row.state-completed .item-name {
   text-decoration:line-through; text-decoration-color:var(--strike-color);
@@ -253,11 +264,15 @@ body {
 .chevron.open { transform:rotate(180deg); }
 
 /* Bottom action bar (long press) */
+@keyframes slideUpActionBar {
+  from { opacity:0; transform:translateX(-50%) translateY(16px); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}
 .action-bar {
   position:fixed; bottom:0; left:50%; transform:translateX(-50%);
   width:min(480px, 100vw); background:var(--brand);
   display:flex; align-items:center; z-index:300;
-  animation:slideUpBar .15s ease;
+  animation:slideUpActionBar .15s ease;
 }
 .action-bar.hidden { display:none; }
 .action-bar-btn {
@@ -400,6 +415,17 @@ select.input {
 ::-webkit-scrollbar-thumb { background:var(--bg-4); border-radius:2px; }
 
 /* Animations */
+@keyframes item-fade-out { from{opacity:1} to{opacity:0} }
+.item-row.fading-out { animation:item-fade-out 0.32s ease forwards; }
+
+@keyframes icon-pop {
+  0%   { transform:scale(1.22); opacity:1; }
+  100% { transform:scale(2.0); opacity:0; }
+}
+.item-circle.icon-popping {
+  animation:icon-pop 0.28s ease-out forwards !important;
+}
+
 @keyframes fadeIn      { from{opacity:0} to{opacity:1} }
 @keyframes fadeScaleIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
 @keyframes slideUpBar  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }

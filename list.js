@@ -238,6 +238,63 @@ window.toggleListMenu = function() {
   }
 };
 
+window._shoppingMode = false;
+window.toggleShoppingMode = function() {
+  if (!window._shoppingMode) {
+    // Verificar si hay ítems marcados antes de activar
+    var hasMarked = window.items.some(function(i) {
+      return i.item_state === 'checked' || i.item_state === 'completed';
+    });
+    if (!hasMarked) {
+      document.getElementById('modal-shopping-empty').classList.remove('hidden');
+      return;
+    }
+  }
+  window._shoppingMode = !window._shoppingMode;
+  var btn = document.getElementById('btn-shopping-mode');
+  if (btn) {
+    btn.classList.toggle('active', window._shoppingMode);
+    var btnLabel = btn.querySelector('[data-i18n]');
+    if (btnLabel) btnLabel.textContent = window._shoppingMode ? t('shoppingModeExit') : t('shoppingMode');
+  }
+  var pill = document.getElementById('add-pill');
+  if (pill) pill.classList.toggle('hidden', window._shoppingMode);
+  if (window._shoppingMode) {
+    var panel = document.getElementById('add-panel');
+    if (panel && !panel.classList.contains('hidden')) {
+      panel.classList.add('hidden');
+      if (pill) pill.classList.add('hidden');
+    }
+  }
+  // Ambas direcciones: desvanecer → render → scroll arriba → aparecer
+  var pc = document.getElementById('page-content');
+  if (pc) {
+    pc.style.transition = 'opacity 0.15s ease';
+    pc.style.opacity = '0';
+    setTimeout(function() {
+      window._skipFlip = true;
+      pc.style.overflowY = 'hidden';
+      pc.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      window.scrollTo(0, 0);
+      window.renderPage();
+      pc.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      window.scrollTo(0, 0);
+      pc.style.overflowY = '';
+      requestAnimationFrame(function() {
+        pc.style.opacity = '1';
+        setTimeout(function() { pc.style.transition = ''; pc.style.opacity = ''; }, 160);
+      });
+    }, 160);
+  } else {
+    window._skipFlip = true;
+    window.renderPage();
+  }
+};
+
 window.renderPage = function() {
   var sortedItems = window.items.slice().sort(function(a, b) { return (a.name||'').localeCompare(b.name||'', undefined, {sensitivity:'base'}); });
   var unchecked  = sortedItems.filter(function(i) { return (i.item_state||'unchecked') === 'unchecked'; });
@@ -271,7 +328,22 @@ window.renderPage = function() {
     }
   }
   var html = '';
-  if (window.items.length === 0) {
+  if (window._shoppingMode && below.length === 0) {
+    // Salir del modo compras silenciosamente si ya no quedan marcados
+    window._shoppingMode = false;
+    var _smBtn = document.getElementById('btn-shopping-mode');
+    if (_smBtn) _smBtn.classList.remove('active');
+    var _smPill = document.getElementById('add-pill');
+    if (_smPill) _smPill.classList.remove('hidden');
+  }
+  if (window._shoppingMode) {
+    // Modo compras: solo verdes y rojos
+    html += below.map(function(i) { return window.renderItem(i); }).join('');
+    html += '<div style="display:flex;gap:10px;padding:16px;margin-top:8px">';
+    if (completed.length > 0) html += '<button class="btn btn-outline btn-full" onclick="document.getElementById(\'modal-clear-completed\').classList.remove(\'hidden\')">' + t('clearCompleted') + '</button>';
+    html += '<button class="btn btn-danger btn-full" onclick="document.getElementById(\'modal-clear-all\').classList.remove(\'hidden\')">' + t('clearAll') + '</button>';
+    html += '</div>';
+  } else if (window.items.length === 0) {
     html = '<div class="empty-state"><div class="empty-icon">🛒</div><h3>' + t('noItems') + '</h3><p>' + t('noItemsHint') + '</p></div>';
   } else {
     html += unchecked.map(function(i) { return window.renderItem(i); }).join('');
@@ -286,7 +358,33 @@ window.renderPage = function() {
       html += '</div>';
     }
   }
+  // FLIP Step 1: capturar posiciones actuales antes de reemplazar DOM
+  var _flipPos = {};
+  if (!window._skipFlip) {
+    document.querySelectorAll('#page-content .item-row[id]').forEach(function(r) {
+      if (!r.classList.contains('fading-out')) {
+        _flipPos[r.id] = r.getBoundingClientRect().top;
+      }
+    });
+  }
+  window._skipFlip = false;
+
   var el = document.getElementById('page-content'); if (el) el.innerHTML = html;
+
+  // FLIP Step 2: animar ítems que cambiaron de posición
+  document.querySelectorAll('#page-content .item-row[id]').forEach(function(r) {
+    if (_flipPos[r.id] !== undefined) {
+      var delta = _flipPos[r.id] - r.getBoundingClientRect().top;
+      if (Math.abs(delta) > 1) {
+        r.style.transform = 'translateY(' + delta + 'px)';
+        r.style.transition = 'none';
+        requestAnimationFrame(function() { requestAnimationFrame(function() {
+          r.style.transition = 'transform 0.28s ease';
+          r.style.transform = '';
+        }); });
+      }
+    }
+  });
 };
 
 window.renderItem = function(item) {
@@ -294,13 +392,17 @@ window.renderItem = function(item) {
   var catIcon = (item.categories && item.categories.icon) ? item.categories.icon : '🛒';
   var circleClass = state === 'completed' ? 'state-completed' : (state === 'checked' ? 'state-checked' : '');
   var nameStyle = 'cursor:pointer;';
-  if (state === 'completed') nameStyle += 'text-decoration:line-through;text-decoration-color:#ef4444;text-decoration-thickness:2px;color:var(--completed-text);';
+  var innerStyle = '';
+  if (state === 'completed') {
+    nameStyle += 'color:var(--completed-text);';
+    innerStyle = 'text-decoration:line-through;text-decoration-color:#ef4444;text-decoration-thickness:2px;';
+  }
   return '<div class="item-row" id="row-' + item.id + '"' +
     ' ontouchstart="startLongPress(\'' + item.id + '\',event)" ontouchend="cancelLongPress()" ontouchmove="cancelLongPress()"' +
     ' onmousedown="startLongPress(\'' + item.id + '\',event)" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()">' +
     '<div class="item-circle ' + circleClass + '" onclick="if(window._longPressFired){window._longPressFired=false;return;} window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')" ></div>' +
     '<span class="item-name" style="' + nameStyle + '" onclick="if(window._longPressFired){window._longPressFired=false;return;} window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')">' +
-      esc(item.name) + (item.quantity ? ' <span style="color:var(--text-3);font-size:var(--fs-xs)">' + esc(item.quantity) + '</span>' : '') +
+      '<span class="item-text-inner" style="' + innerStyle + '">' + esc(item.name) + '</span>' + (item.quantity ? ' <span style="color:var(--text-3);font-size:var(--fs-xs)">' + esc(item.quantity) + '</span>' : '') +
     '</span>' +
     '<div class="item-cat-icon">' + catIcon + '</div>' +
     '</div>';
@@ -353,29 +455,74 @@ window.cycleState = function(id) {
       void row.offsetWidth;
       row.classList.add('item-tapping');
     }
-    // Círculo se convierte en logo verde inmediatamente
+    // Círculo se convierte en logo verde con efecto pop
     if (circle) {
       circle.classList.add('state-checked');
+      circle.classList.add('icon-popping');
     }
-    setTimeout(applyStateChange, 220);
+    // Después del glow, fade + colapso de altura
+    setTimeout(function() {
+      var r = document.getElementById('row-' + id);
+      if (r) {
+        r.style.height = r.offsetHeight + 'px';
+        r.style.overflow = 'hidden';
+        r.classList.remove('item-tapping');
+        void r.offsetWidth;
+        r.classList.add('fading-out');
+        requestAnimationFrame(function() { requestAnimationFrame(function() {
+          r.style.transition = 'height 0.32s ease, padding-top 0.32s ease, padding-bottom 0.32s ease, border-bottom-width 0.32s ease';
+          r.style.height = '0'; r.style.paddingTop = '0'; r.style.paddingBottom = '0'; r.style.borderBottomWidth = '0';
+        }); });
+      }
+      setTimeout(applyStateChange, 340);
+    }, 210);
   } else if (state === 'checked') {
     var row = document.getElementById('row-' + id);
     var circle = row ? row.querySelector('.item-circle') : null;
-    var nameEl = row ? row.querySelector('.item-name') : null;
-    // Círculo pasa a rojo inmediatamente
-    if (circle) { circle.classList.remove('state-checked'); circle.classList.add('state-completed'); }
-    // Tachado de izquierda a derecha
-    if (nameEl) { nameEl.classList.add('striking'); }
-    setTimeout(applyStateChange, 320);
+    var textEl = row ? row.querySelector('.item-text-inner') : null;
+    if (row) { row.classList.remove('item-tapping-red'); void row.offsetWidth; row.classList.add('item-tapping-red'); }
+    if (circle) { circle.classList.remove('state-checked'); circle.classList.add('state-completed'); circle.classList.add('icon-popping'); }
+    if (textEl) { textEl.classList.add('striking'); }
+    // Después del tachado, fade + colapso de altura
+    setTimeout(function() {
+      var r = document.getElementById('row-' + id);
+      if (r) {
+        r.style.height = r.offsetHeight + 'px';
+        r.style.overflow = 'hidden';
+        r.classList.remove('item-tapping-red');
+        void r.offsetWidth;
+        r.classList.add('fading-out');
+        requestAnimationFrame(function() { requestAnimationFrame(function() {
+          r.style.transition = 'height 0.32s ease, padding-top 0.32s ease, padding-bottom 0.32s ease, border-bottom-width 0.32s ease';
+          r.style.height = '0'; r.style.paddingTop = '0'; r.style.paddingBottom = '0'; r.style.borderBottomWidth = '0';
+        }); });
+      }
+      setTimeout(applyStateChange, 340);
+    }, 210);
   } else {
-    // completed → checked: glow verde suave
+    // completed → checked
     var row = document.getElementById('row-' + id);
-    if (row) {
-      row.classList.remove('item-tapping');
-      void row.offsetWidth;
-      row.classList.add('item-tapping');
-    }
-    setTimeout(applyStateChange, 200);
+    var circle = row ? row.querySelector('.item-circle') : null;
+    var textEl = row ? row.querySelector('.item-text-inner') : null;
+    if (row) { row.classList.remove('item-tapping'); void row.offsetWidth; row.classList.add('item-tapping'); }
+    if (circle) { circle.classList.remove('state-completed'); circle.classList.add('state-checked'); circle.classList.add('icon-popping'); }
+    if (textEl) { textEl.style.textDecoration = 'none'; textEl.style.color = ''; textEl.classList.add('unstriking'); }
+    // Después del destachado, fade + colapso de altura
+    setTimeout(function() {
+      var r = document.getElementById('row-' + id);
+      if (r) {
+        r.style.height = r.offsetHeight + 'px';
+        r.style.overflow = 'hidden';
+        r.classList.remove('item-tapping');
+        void r.offsetWidth;
+        r.classList.add('fading-out');
+        requestAnimationFrame(function() { requestAnimationFrame(function() {
+          r.style.transition = 'height 0.32s ease, padding-top 0.32s ease, padding-bottom 0.32s ease, border-bottom-width 0.32s ease';
+          r.style.height = '0'; r.style.paddingTop = '0'; r.style.paddingBottom = '0'; r.style.borderBottomWidth = '0';
+        }); });
+      }
+      setTimeout(applyStateChange, 340);
+    }, 210);
   }
 };
 
@@ -408,7 +555,7 @@ window.selectItem = function(id) {
   if (window.selectedItemIds.length === 0) {
     document.getElementById('action-bar').classList.remove('hidden');
     document.getElementById('add-pill').classList.add('hidden');
-    document.getElementById('btn-action-edit').style.display = 'block';
+    document.getElementById('btn-action-edit').style.display = '';
     document.getElementById('action-bar-info').textContent = '';
     var b = document.getElementById('back-btn'); b.textContent = '✕'; b.onclick = window.clearSelection;
     window._multiSelectMode = true;
@@ -420,7 +567,7 @@ window.selectItem = function(id) {
   var count = window.selectedItemIds.length;
   var info = document.getElementById('action-bar-info'); var editBtn = document.getElementById('btn-action-edit');
   if (count === 0) { window.clearSelection(); return; }
-  else if (count === 1) { info.textContent = '1 ' + t('selected1'); editBtn.style.display = 'block'; }
+  else if (count === 1) { info.textContent = '1 ' + t('selected1'); editBtn.style.display = ''; }
   else { info.textContent = count + ' ' + t('selectedN'); editBtn.style.display = 'none'; }
 };
 

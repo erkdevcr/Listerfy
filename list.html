@@ -51,9 +51,13 @@
 
   <!-- Bottom nav -->
   <nav class="bottom-nav">
-    <button class="nav-tab active" onclick="location.href='app.html'">
+    <button class="nav-tab" onclick="location.href='app.html'">
       <span class="nav-icon"><svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="26" height="26"><path d="M134.4,345.6c-8.53,0-14.93,6.4-14.93,14.93s6.4,14.93,14.93,14.93,14.93-6.4,14.93-14.93-6.4-14.93-14.93-14.93Z"/><path d="M134.4,238.93c-8.53,0-14.93,6.4-14.93,14.93s6.4,14.93,14.93,14.93,14.93-6.4,14.93-14.93c0-10.67-6.4-14.93-14.93-14.93Z"/><path d="M256,0C114.62,0,0,114.62,0,256s114.62,256,256,256,256-114.62,256-256S397.38,0,256,0ZM134.4,405.33c-25.6,0-46.93-19.2-46.93-46.93,0-25.6,19.2-46.93,46.93-46.93s46.93,19.2,46.93,46.93c-2.13,27.73-21.33,46.93-46.93,46.93ZM134.4,298.67c-25.6,0-46.93-19.2-46.93-46.93s19.2-44.8,46.93-44.8,46.93,19.2,46.93,46.93-21.33,44.8-46.93,44.8ZM183.47,132.27l-46.93,46.93c-2.13,4.27-6.4,4.27-10.67,4.27s-8.53-2.13-10.67-4.27l-23.47-23.47c-6.4-4.27-6.4-14.93,0-21.33s14.93-6.4,21.33,0l12.8,12.8,36.27-36.27c6.4-6.4,14.93-6.4,21.33,0s6.4,14.93,0,21.33ZM409.6,375.47h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93ZM409.6,268.8h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93ZM409.6,162.13h-183.47c-8.53,0-14.93-6.4-14.93-14.93s6.4-14.93,14.93-14.93h183.47c8.53,0,14.93,6.4,14.93,14.93s-6.4,14.93-14.93,14.93Z"/></svg></span>
       <span data-i18n="lists">Lists</span>
+    </button>
+    <button class="nav-tab" id="btn-shopping-mode" onclick="toggleShoppingMode()">
+      <span class="nav-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="26" height="26"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 5.9 17 7 17h11v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H18c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0022.46 4H5.21l-.94-2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></span>
+      <span data-i18n="shoppingMode">Modo compras</span>
     </button>
     <button class="nav-tab" onclick="location.href='profile.html'">
       <span class="nav-icon"><svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="26" height="26"><ellipse cx="256" cy="122.8" rx="104.4" ry="114.8"/><path d="M471.1,430.9c-30.4-89.6-115.2-154-215.1-154s-184.7,64.4-215.1,154c-12.2,35.9,14.3,73.1,52.1,73.1h326c37.9,0,64.3-37.2,52.1-73.1Z"/></svg></span>
@@ -192,6 +196,20 @@
   </div>
 </div>
 
+<!-- Modal: shopping mode sin ítems marcados -->
+<div class="modal-overlay hidden centered" id="modal-shopping-empty">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="text-align:center;padding:8px 0 16px">
+      <div style="font-size:3rem;margin-bottom:12px">🛒</div>
+      <p style="font-size:var(--fs-base);color:var(--text-2)" data-i18n="shoppingModeEmpty">Aún no has marcado artículos</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-brand btn-full btn-lg" onclick="document.getElementById('modal-shopping-empty').classList.add('hidden')">OK</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <!-- Modal: participantes -->
@@ -209,6 +227,34 @@
 <script src="i18n.js"></script>
 <script src="supabase.js"></script>
 <script src="list.js?v=1"></script>
+
+<script>
+// Keyboard push-up: ajustar modales al abrirse el teclado virtual
+if (window.visualViewport) {
+  function _vvAdjust() {
+    var vv = window.visualViewport;
+    var kbH = Math.round(window.innerHeight - vv.height - vv.offsetTop);
+    document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(function(el) {
+      el.style.height = vv.height + 'px';
+      el.style.top = vv.offsetTop + 'px';
+      el.style.bottom = 'auto';
+    });
+  }
+  function _vvReset() {
+    document.querySelectorAll('.modal-overlay').forEach(function(el) {
+      el.style.height = '';
+      el.style.top = '';
+      el.style.bottom = '';
+    });
+  }
+  window.visualViewport.addEventListener('resize', _vvAdjust);
+  window.visualViewport.addEventListener('scroll', _vvAdjust);
+  // Resetear al cerrar teclado (viewport regresa al tamaño normal)
+  window.visualViewport.addEventListener('resize', function() {
+    if (Math.abs(window.visualViewport.height - window.innerHeight) < 50) _vvReset();
+  });
+}
+</script>
 
 <script>
 if ("serviceWorker" in navigator) {
