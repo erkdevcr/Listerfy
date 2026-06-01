@@ -360,12 +360,13 @@ window.cycleState = function(id) {
     setTimeout(applyStateChange, 220);
   } else if (state === 'checked') {
     var row = document.getElementById('row-' + id);
-    if (row) {
-      row.classList.remove('item-tapping-red');
-      void row.offsetWidth;
-      row.classList.add('item-tapping-red');
-    }
-    setTimeout(applyStateChange, 200);
+    var circle = row ? row.querySelector('.item-circle') : null;
+    var nameEl = row ? row.querySelector('.item-name') : null;
+    // Círculo pasa a rojo inmediatamente
+    if (circle) { circle.classList.remove('state-checked'); circle.classList.add('state-completed'); }
+    // Tachado de izquierda a derecha
+    if (nameEl) { nameEl.classList.add('striking'); }
+    setTimeout(applyStateChange, 320);
   } else {
     // completed → checked: glow verde suave
     var row = document.getElementById('row-' + id);
