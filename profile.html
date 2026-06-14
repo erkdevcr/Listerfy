@@ -347,6 +347,13 @@ function renderProfile() {
           <button class="font-size-opt ${fs==='xl'?'active':''}" onclick="setFontSize('xl')">${t('fontXL')}</button>
         </div>
       </div>
+      <div id="profile-install-row" class="profile-row" onclick="window.installPWA()" style="cursor:pointer;${(window.isPWAInstalled() || !window._installPrompt) ? 'display:none' : ''}">
+        <span class="profile-row-label" style="display:flex;flex-direction:column;gap:2px">
+          ${t('installApp')}
+          <span style="font-size:var(--fs-xs);color:var(--text-3);font-weight:400">${t('installHint')}</span>
+        </span>
+        <span style="color:var(--brand);font-weight:700;font-size:var(--fs-sm);flex-shrink:0">${t('install')} ›</span>
+      </div>
     </div>
 
     <div style="padding:16px">
@@ -774,6 +781,11 @@ if ("serviceWorker" in navigator) {
       .catch(function(e) { console.log("SW error:", e); });
   });
 }
+// Show install row if prompt fires after profile renders
+document.addEventListener('installpromptready', function() {
+  var r = document.getElementById('profile-install-row');
+  if (r && !window.isPWAInstalled()) r.style.display = '';
+});
 </script>
 </body>
 </html>

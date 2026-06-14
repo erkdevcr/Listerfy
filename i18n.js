@@ -54,6 +54,11 @@ const i18n = {
     sortAlpha: 'Alfabético',
     sortByCategory: 'Por categoría',
     uncategorized: 'Sin categoría',
+    installApp: 'Instalar app',
+    installHint: 'Añade Listerfy a tu pantalla de inicio',
+    install: 'Instalar',
+    installing: 'Instalando...',
+    installSuccess: '¡Lista! Ya está en tu pantalla de inicio',
     // Papelera
     trash: 'Papelera',
     trashEmpty: 'La papelera está vacía',
@@ -124,6 +129,11 @@ const i18n = {
     sortAlpha: 'Alphabetical',
     sortByCategory: 'By category',
     uncategorized: 'Uncategorized',
+    installApp: 'Install app',
+    installHint: 'Add Listerfy to your home screen',
+    install: 'Install',
+    installing: 'Installing...',
+    installSuccess: 'Done! It\'s now on your home screen',
     // Trash
     trash: 'Trash',
     trashEmpty: 'Trash is empty',
@@ -163,3 +173,69 @@ function applyPrefs() {
 }
 applyPrefs();
 applyTranslations();
+
+// PWA install prompt
+window.isPWAInstalled = function() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true ||
+         localStorage.getItem('pwaInstalled') === '1';
+};
+window._installPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  if (window.isPWAInstalled()) return;
+  window._installPrompt = e;
+  document.dispatchEvent(new CustomEvent('installpromptready'));
+});
+window.addEventListener('appinstalled', function() {
+  localStorage.setItem('pwaInstalled', '1');
+  window._installPrompt = null;
+  var b = document.getElementById('pwa-banner'); if (b) b.style.display = 'none';
+  var r = document.getElementById('profile-install-row'); if (r) r.style.display = 'none';
+});
+window.installPWA = function() {
+  if (!window._installPrompt) return;
+  var logoPath = 'M154.2,211.57c-35.21-34.4-68.39-71.02-103.88-105.16l96.8,173.21c5.26,9.01,18.37,10.12,25.07,2.13L377.87,9.71c-.29,2.45-1.62,4.98-2.6,7.27-12.8,30.03-27.84,59.22-40.8,89.19,28.97,70.14,9.77,151.17-47.84,200.13-82.99,70.53-209.83,47.79,-263.68-46.2C-24.9,176.57,4.67,70.26,87.56,22.79,163.68-20.82,262.52-.2,313.73,70.67l-154.51,144.37c-2.46,1.18-3.6-2.07-5.03-3.47Z';
+  var overlay = document.createElement('div');
+  overlay.id = 'pwa-installing-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px';
+  overlay.innerHTML =
+    '<div class="spinner spinner-brand">' +
+      '<svg viewBox="0 0 377.87 347.58" xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#34b080">' +
+        '<path d="' + logoPath + '"/></svg></div>' +
+    '<div id="pwa-install-status" style="font-size:var(--fs-base);font-weight:700;color:var(--text-2);text-align:center;padding:0 40px">' + t('installing') + '</div>';
+  document.body.appendChild(overlay);
+
+  window._installPrompt.prompt();
+  window._installPrompt.userChoice.then(function(choice) {
+    window._installPrompt = null;
+    if (choice.outcome === 'accepted') {
+      localStorage.setItem('pwaInstalled', '1');
+      var status = document.getElementById('pwa-install-status');
+      if (status) status.textContent = t('installSuccess');
+      // Swap spinner for a checkmark
+      var spinner = overlay.querySelector('.spinner');
+      if (spinner) {
+        spinner.classList.remove('spinner-brand');
+        spinner.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="64" height="64">' +
+          '<circle cx="12" cy="12" r="10" stroke="#34b080" stroke-width="1.8"/>' +
+          '<path d="M7 12l3.5 3.5L17 8" stroke="#34b080" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      }
+      setTimeout(function() {
+        overlay.style.transition = 'opacity .35s ease';
+        overlay.style.opacity = '0';
+        setTimeout(function() {
+          overlay.remove();
+          var b = document.getElementById('pwa-banner'); if (b) b.style.display = 'none';
+          var r = document.getElementById('profile-install-row'); if (r) r.style.display = 'none';
+        }, 350);
+      }, 2200);
+    } else {
+      overlay.remove();
+    }
+  });
+};
+window.dismissPWABanner = function() {
+  localStorage.setItem('pwaBannerDismissed', '1');
+  var b = document.getElementById('pwa-banner'); if (b) b.style.display = 'none';
+};
