@@ -206,30 +206,49 @@ window.installPWA = function() {
     '<div id="pwa-install-status" style="font-size:var(--fs-base);font-weight:700;color:var(--text-2);text-align:center;padding:0 40px">' + t('installing') + '</div>';
   document.body.appendChild(overlay);
 
+  var _installAccepted = false;
+  var _installSuccessShown = false;
+  var _installStart = null;
+
+  function showInstallSuccess() {
+    if (_installSuccessShown) return;
+    _installSuccessShown = true;
+    var status = document.getElementById('pwa-install-status');
+    if (status) status.textContent = t('installSuccess');
+    var spinner = overlay.querySelector('.spinner');
+    if (spinner) {
+      spinner.classList.remove('spinner-brand');
+      spinner.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="64" height="64">' +
+        '<circle cx="12" cy="12" r="10" stroke="#34b080" stroke-width="1.8"/>' +
+        '<path d="M7 12l3.5 3.5L17 8" stroke="#34b080" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+    setTimeout(function() {
+      overlay.style.transition = 'opacity .35s ease';
+      overlay.style.opacity = '0';
+      setTimeout(function() {
+        overlay.remove();
+        var b = document.getElementById('pwa-banner'); if (b) b.style.display = 'none';
+        var r = document.getElementById('profile-install-row'); if (r) r.style.display = 'none';
+      }, 350);
+    }, 2500);
+  }
+
+  // appinstalled fires when Chrome finishes — show success but respect 7s minimum
+  window.addEventListener('appinstalled', function() {
+    if (!_installAccepted) return;
+    var elapsed = _installStart ? Date.now() - _installStart : 7000;
+    setTimeout(showInstallSuccess, Math.max(0, 7000 - elapsed));
+  }, { once: true });
+
   window._installPrompt.prompt();
   window._installPrompt.userChoice.then(function(choice) {
     window._installPrompt = null;
     if (choice.outcome === 'accepted') {
+      _installAccepted = true;
+      _installStart = Date.now();
       localStorage.setItem('pwaInstalled', '1');
-      var status = document.getElementById('pwa-install-status');
-      if (status) status.textContent = t('installSuccess');
-      // Swap spinner for a checkmark
-      var spinner = overlay.querySelector('.spinner');
-      if (spinner) {
-        spinner.classList.remove('spinner-brand');
-        spinner.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="64" height="64">' +
-          '<circle cx="12" cy="12" r="10" stroke="#34b080" stroke-width="1.8"/>' +
-          '<path d="M7 12l3.5 3.5L17 8" stroke="#34b080" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      }
-      setTimeout(function() {
-        overlay.style.transition = 'opacity .35s ease';
-        overlay.style.opacity = '0';
-        setTimeout(function() {
-          overlay.remove();
-          var b = document.getElementById('pwa-banner'); if (b) b.style.display = 'none';
-          var r = document.getElementById('profile-install-row'); if (r) r.style.display = 'none';
-        }, 350);
-      }, 2200);
+      // Fallback: show success after 10s if appinstalled never fires
+      setTimeout(showInstallSuccess, 10000);
     } else {
       overlay.remove();
     }
