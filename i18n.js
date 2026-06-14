@@ -257,4 +257,5 @@ window.installPWA = function() {
 window.dismissPWABanner = function() {
   localStorage.setItem('pwaBannerDismissed', '1');
   var b = document.getElementById('pwa-banner'); if (b) b.style.display = 'none';
+  var f = document.querySelector('.fab'); if (f) f.style.display = '';
 };

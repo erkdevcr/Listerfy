@@ -250,6 +250,8 @@ if ("serviceWorker" in navigator) {
     if (window._installPrompt) {
       var b = document.getElementById('pwa-banner');
       if (b) b.style.display = 'block';
+      var f = document.querySelector('.fab');
+      if (f) f.style.display = 'none';
     }
   }
   tryShow();
