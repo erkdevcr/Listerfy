@@ -786,6 +786,11 @@ document.addEventListener('installpromptready', function() {
   var r = document.getElementById('profile-install-row');
   if (r && !window.isPWAInstalled()) r.style.display = '';
 });
+// In case beforeinstallprompt already fired before this listener was attached
+if (window._installPrompt && !window.isPWAInstalled()) {
+  var r = document.getElementById('profile-install-row');
+  if (r) r.style.display = '';
+}
 </script>
 </body>
 </html>
