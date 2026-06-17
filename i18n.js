@@ -270,13 +270,12 @@ window.installPWA = function() {
 };
 // SW update notification
 window._swUpdatePending = sessionStorage.getItem('swUpdatePending') === '1';
-window._showSwUpdateNotif = function() {
-  if (window._swUpdatePending) return;
-  window._swUpdatePending = true;
-  sessionStorage.setItem('swUpdatePending', '1');
+
+// _renderSwUpdateNotif: renders the UI — called both on first trigger AND on page restore
+window._renderSwUpdateNotif = function() {
   var notifList = document.getElementById('notif-list');
   if (notifList) {
-    // app.html — inject into bell
+    if (document.getElementById('notif-sw-update')) return; // already visible
     var item = document.createElement('div');
     item.className = 'notif-item unread';
     item.id = 'notif-sw-update';
@@ -286,7 +285,6 @@ window._showSwUpdateNotif = function() {
         '<button class="btn btn-brand btn-sm" onclick="sessionStorage.removeItem(\'swUpdatePending\');window.location.reload()">' + t('swUpdateBtn') + '</button>' +
       '</div>';
     notifList.insertBefore(item, notifList.firstChild);
-    // bump badge
     var badge = document.getElementById('notif-badge');
     var navBadge = document.getElementById('nav-badge');
     [badge, navBadge].forEach(function(b) {
@@ -295,7 +293,7 @@ window._showSwUpdateNotif = function() {
       b.textContent = n; b.classList.remove('hidden');
     });
   } else {
-    // list.html / profile.html — top banner
+    if (document.getElementById('sw-update-banner')) return; // already visible
     var banner = document.createElement('div');
     banner.id = 'sw-update-banner';
     banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:var(--bg-3);border-bottom:1px solid var(--border-2);padding:10px 16px;display:flex;align-items:center;gap:10px;animation:fadeScaleIn .2s ease';
@@ -307,16 +305,23 @@ window._showSwUpdateNotif = function() {
     document.body.prepend(banner);
   }
 };
+
+// _showSwUpdateNotif: marks pending + renders (called by SW message)
+window._showSwUpdateNotif = function() {
+  window._swUpdatePending = true;
+  sessionStorage.setItem('swUpdatePending', '1');
+  window._renderSwUpdateNotif();
+};
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'SW_UPDATED') window._showSwUpdateNotif();
   });
 }
-// If flag was set in a previous page, show on load (after DOM is ready)
+// On every page load, if flag is set, restore the notification after DOM + app data are ready
 if (window._swUpdatePending) {
   document.addEventListener('DOMContentLoaded', function() {
-    // Small delay so app.html's notif-list is populated first
-    setTimeout(window._showSwUpdateNotif, 800);
+    setTimeout(window._renderSwUpdateNotif, 900);
   });
 }
 
