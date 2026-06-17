@@ -1,5 +1,5 @@
 // sw.js — Listerfy Service Worker
-const CACHE = 'listerfy-v9';
+const CACHE = 'listerfy-v10';
 const OFFLINE = [
   './app.html',
   './list.html',
