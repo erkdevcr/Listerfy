@@ -269,10 +269,11 @@ window.installPWA = function() {
   });
 };
 // SW update notification
-window._swUpdatePending = false;
+window._swUpdatePending = sessionStorage.getItem('swUpdatePending') === '1';
 window._showSwUpdateNotif = function() {
   if (window._swUpdatePending) return;
   window._swUpdatePending = true;
+  sessionStorage.setItem('swUpdatePending', '1');
   var notifList = document.getElementById('notif-list');
   if (notifList) {
     // app.html — inject into bell
@@ -282,7 +283,7 @@ window._showSwUpdateNotif = function() {
     item.innerHTML =
       '<div class="notif-text">🔄 ' + t('swUpdateAvailable') + '</div>' +
       '<div class="notif-actions" style="margin-top:8px">' +
-        '<button class="btn btn-brand btn-sm" onclick="window.location.reload()">' + t('swUpdateBtn') + '</button>' +
+        '<button class="btn btn-brand btn-sm" onclick="sessionStorage.removeItem(\'swUpdatePending\');window.location.reload()">' + t('swUpdateBtn') + '</button>' +
       '</div>';
     notifList.insertBefore(item, notifList.firstChild);
     // bump badge
@@ -301,7 +302,7 @@ window._showSwUpdateNotif = function() {
     banner.innerHTML =
       '<span style="font-size:1.1rem">🔄</span>' +
       '<span style="flex:1;font-size:var(--fs-sm);font-weight:600;color:var(--text-1)">' + t('swUpdateAvailable') + '</span>' +
-      '<button onclick="window.location.reload()" style="background:var(--brand);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:700;font-size:var(--fs-xs);cursor:pointer">' + t('swUpdateBtn') + '</button>' +
+      '<button onclick="sessionStorage.removeItem(\'swUpdatePending\');window.location.reload()" style="background:var(--brand);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:700;font-size:var(--fs-xs);cursor:pointer">' + t('swUpdateBtn') + '</button>' +
       '<button onclick="document.getElementById(\'sw-update-banner\').remove()" style="background:none;border:none;color:var(--text-3);font-size:1.1rem;cursor:pointer;padding:2px 4px">✕</button>';
     document.body.prepend(banner);
   }
@@ -309,6 +310,13 @@ window._showSwUpdateNotif = function() {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'SW_UPDATED') window._showSwUpdateNotif();
+  });
+}
+// If flag was set in a previous page, show on load (after DOM is ready)
+if (window._swUpdatePending) {
+  document.addEventListener('DOMContentLoaded', function() {
+    // Small delay so app.html's notif-list is populated first
+    setTimeout(window._showSwUpdateNotif, 800);
   });
 }
 

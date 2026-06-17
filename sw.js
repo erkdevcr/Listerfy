@@ -1,5 +1,5 @@
 // sw.js — Listerfy Service Worker
-const CACHE = 'listerfy-v7';
+const CACHE = 'listerfy-v8';
 const OFFLINE = [
   './app.html',
   './list.html',
@@ -25,16 +25,16 @@ self.addEventListener('install', function(e) {
 self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(keys) {
-      return Promise.all(
-        keys.filter(function(k) { return k !== CACHE; })
-            .map(function(k) { return caches.delete(k); })
-      );
-    }).then(function() {
-      return self.clients.claim(); // claim first, then notify
-    }).then(function() {
-      return self.clients.matchAll({ type: 'window' });
-    }).then(function(clients) {
-      clients.forEach(function(c) { c.postMessage({ type: 'SW_UPDATED' }); });
+      var old = keys.filter(function(k) { return k !== CACHE; });
+      return Promise.all(old.map(function(k) { return caches.delete(k); }))
+        .then(function() { return old.length > 0; }); // true = real update
+    }).then(function(wasUpdate) {
+      return self.clients.claim().then(function() { return wasUpdate; });
+    }).then(function(wasUpdate) {
+      if (!wasUpdate) return;
+      return self.clients.matchAll({ type: 'window' }).then(function(clients) {
+        clients.forEach(function(c) { c.postMessage({ type: 'SW_UPDATED' }); });
+      });
     })
   );
 });
