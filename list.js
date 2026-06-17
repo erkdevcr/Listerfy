@@ -297,7 +297,10 @@ window._priceSectionTotal = function(items) {
   if (!window._showPrices) return '';
   var total = items.reduce(function(s, i) { return s + window._itemTotal(i); }, 0);
   if (!total) return '';
-  return '<div style="text-align:right;padding:2px 18px 10px;font-size:var(--fs-sm);font-weight:700;color:var(--text-3)">' + window._formatPrice(total) + '</div>';
+  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#111;font-size:var(--fs-sm);font-weight:700">' +
+    '<span style="color:#fff">Total:</span>' +
+    '<span style="color:#fff">' + window._formatPrice(total) + '</span>' +
+  '</div>';
 };
 
 window._demoTimer = null;
@@ -559,9 +562,9 @@ window.renderItem = function(item) {
     ' onmousedown="startLongPress(\'' + item.id + '\',event)" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()">' +
     '<div class="item-circle ' + circleClass + '" onclick="if(window._longPressFired){window._longPressFired=false;return;} window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')" ></div>' +
     '<span class="item-name" style="' + nameStyle + '" onclick="if(window._longPressFired){window._longPressFired=false;return;} window._multiSelectMode ? selectItem(\'' + item.id + '\') : cycleState(\'' + item.id + '\')">' +
-      '<span class="item-text-inner" style="' + innerStyle + '">' + esc(item.name) + '</span>' + (item.quantity ? ' <span style="color:var(--text-3);font-size:var(--fs-xs)">' + esc(item.quantity) + '</span>' : '') +
+      '<span class="item-text-inner" style="' + innerStyle + '">' + esc(item.name) + '</span>' +
     '</span>' +
-    (window._showPrices && item.price ? '<span style="font-size:var(--fs-xs);font-weight:700;color:var(--text-2);white-space:nowrap;margin-right:4px">' + (item.quantity && parseFloat(item.quantity) > 1 ? window._formatPrice(item.price) + ' × ' + esc(item.quantity) : window._formatPrice(item.price)) + '</span>' : '') +
+    (window._showPrices && item.price ? '<span style="font-size:var(--fs-xs);font-weight:700;color:var(--text-3);white-space:nowrap;margin-right:4px">' + (item.quantity && parseFloat(item.quantity) > 1 ? esc(item.quantity) + ' × ' + window._formatPrice(item.price) : window._formatPrice(item.price)) + '</span>' : '') +
     '<div class="item-cat-icon" onclick="if(window._longPressFired)return;event.stopPropagation();openCatPicker(\'' + item.id + '\')">' + catIcon + '</div>' +
     '</div>';
 };
