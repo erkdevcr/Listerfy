@@ -1,5 +1,5 @@
 // sw.js — Listerfy Service Worker
-const CACHE = 'listerfy-v5';
+const CACHE = 'listerfy-v6';
 const OFFLINE = [
   './app.html',
   './list.html',
@@ -30,12 +30,13 @@ self.addEventListener('activate', function(e) {
             .map(function(k) { return caches.delete(k); })
       );
     }).then(function() {
+      return self.clients.claim(); // claim first, then notify
+    }).then(function() {
       return self.clients.matchAll({ type: 'window' });
     }).then(function(clients) {
       clients.forEach(function(c) { c.postMessage({ type: 'SW_UPDATED' }); });
     })
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', function(e) {
