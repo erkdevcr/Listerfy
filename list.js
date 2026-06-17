@@ -288,30 +288,16 @@ window._itemTotal = function(item) {
   return p * q;
 };
 
-window._renderPricesFooter = function(items) {
+window._renderPricesFooter = function() {
   var footer = document.getElementById('prices-footer');
-  if (!footer) return;
-  if (!window._showPrices || !items || items.length === 0) { footer.style.display = 'none'; return; }
-  var uncheckedItems = items.filter(function(i) { return (i.item_state||'unchecked') === 'unchecked'; });
-  var checkedItems   = items.filter(function(i) { return i.item_state === 'checked' || i.item_state === 'completed'; });
-  var totalAll       = items.reduce(function(s,i) { return s + window._itemTotal(i); }, 0);
-  var totalUnchecked = uncheckedItems.reduce(function(s,i) { return s + window._itemTotal(i); }, 0);
-  var totalChecked   = checkedItems.reduce(function(s,i) { return s + window._itemTotal(i); }, 0);
-  var row = function(label, val, bold) {
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0' + (bold ? ';font-weight:800;font-size:var(--fs-base)' : '') + '">' +
-      '<span style="color:var(--text-3)">' + label + '</span>' +
-      '<span style="color:' + (bold ? 'var(--brand)' : 'var(--text-1)') + ';font-weight:' + (bold ? '800' : '600') + '">' + window._formatPrice(val) + '</span>' +
-    '</div>';
-  };
-  var html = '';
-  if (uncheckedItems.length > 0 && checkedItems.length > 0) {
-    html += row(t('totalUnchecked'), totalUnchecked, false);
-    html += row(t('totalChecked'), totalChecked, false);
-    html += '<div style="border-top:1px solid var(--border-2);margin:6px 0"></div>';
-  }
-  html += row(t('totalAll'), totalAll, true);
-  footer.innerHTML = html;
-  footer.style.display = '';
+  if (footer) footer.style.display = 'none';
+};
+
+window._priceSectionTotal = function(items) {
+  if (!window._showPrices) return '';
+  var total = items.reduce(function(s, i) { return s + window._itemTotal(i); }, 0);
+  if (!total) return '';
+  return '<div style="text-align:right;padding:2px 18px 10px;font-size:var(--fs-sm);font-weight:700;color:var(--text-3)">' + window._formatPrice(total) + '</div>';
 };
 
 window._demoTimer = null;
@@ -505,6 +491,7 @@ window.renderPage = function() {
   if (window._shoppingMode) {
     // Modo compras: solo verdes y rojos
     html += renderItemsList(below);
+    html += window._priceSectionTotal(below);
     html += '<div style="display:flex;gap:10px;padding:16px;margin-top:8px">';
     if (completed.length > 0) html += '<button class="btn btn-outline btn-full" onclick="document.getElementById(\'modal-clear-completed\').classList.remove(\'hidden\')">' + t('clearCompleted') + '</button>';
     html += '<button class="btn btn-danger btn-full" onclick="document.getElementById(\'modal-clear-all\').classList.remove(\'hidden\')">' + t('clearAll') + '</button>';
@@ -513,9 +500,11 @@ window.renderPage = function() {
     html = '<div class="empty-state"><div class="empty-icon">🛒</div><h3>' + t('noItems') + '</h3><p>' + t('noItemsHint') + '</p></div>';
   } else {
     html += renderItemsList(unchecked);
+    html += window._priceSectionTotal(unchecked);
     if (below.length > 0) {
       html += '<div style="padding:10px 16px 8px;background:var(--bg-3);border-top:1px solid var(--border-2);border-bottom:1px solid var(--border-2);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)">(' + below.length + ') ' + t('checkedItems') + '</div>';
       html += renderItemsList(below);
+      html += window._priceSectionTotal(below);
     }
     if (below.length > 0) {
       html += '<div style="display:flex;gap:10px;padding:16px;margin-top:8px">';
