@@ -64,6 +64,8 @@ const i18n = {
     install: 'Instalar',
     installing: 'Instalando...',
     installSuccess: '¡Lista! Ya está en tu pantalla de inicio',
+    swUpdateAvailable: 'Nueva versión disponible',
+    swUpdateBtn: 'Actualizar',
     // Papelera
     trash: 'Papelera',
     trashEmpty: 'La papelera está vacía',
@@ -144,6 +146,8 @@ const i18n = {
     install: 'Install',
     installing: 'Installing...',
     installSuccess: 'Done! It\'s now on your home screen',
+    swUpdateAvailable: 'New version available',
+    swUpdateBtn: 'Update',
     // Trash
     trash: 'Trash',
     trashEmpty: 'Trash is empty',
@@ -264,6 +268,50 @@ window.installPWA = function() {
     }
   });
 };
+// SW update notification
+window._swUpdatePending = false;
+window._showSwUpdateNotif = function() {
+  if (window._swUpdatePending) return;
+  window._swUpdatePending = true;
+  var notifList = document.getElementById('notif-list');
+  if (notifList) {
+    // app.html — inject into bell
+    var item = document.createElement('div');
+    item.className = 'notif-item unread';
+    item.id = 'notif-sw-update';
+    item.innerHTML =
+      '<div class="notif-text">🔄 ' + t('swUpdateAvailable') + '</div>' +
+      '<div class="notif-actions" style="margin-top:8px">' +
+        '<button class="btn btn-brand btn-sm" onclick="window.location.reload()">' + t('swUpdateBtn') + '</button>' +
+      '</div>';
+    notifList.insertBefore(item, notifList.firstChild);
+    // bump badge
+    var badge = document.getElementById('notif-badge');
+    var navBadge = document.getElementById('nav-badge');
+    [badge, navBadge].forEach(function(b) {
+      if (!b) return;
+      var n = (parseInt(b.textContent) || 0) + 1;
+      b.textContent = n; b.classList.remove('hidden');
+    });
+  } else {
+    // list.html / profile.html — top banner
+    var banner = document.createElement('div');
+    banner.id = 'sw-update-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:var(--bg-3);border-bottom:1px solid var(--border-2);padding:10px 16px;display:flex;align-items:center;gap:10px;animation:fadeScaleIn .2s ease';
+    banner.innerHTML =
+      '<span style="font-size:1.1rem">🔄</span>' +
+      '<span style="flex:1;font-size:var(--fs-sm);font-weight:600;color:var(--text-1)">' + t('swUpdateAvailable') + '</span>' +
+      '<button onclick="window.location.reload()" style="background:var(--brand);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:700;font-size:var(--fs-xs);cursor:pointer">' + t('swUpdateBtn') + '</button>' +
+      '<button onclick="document.getElementById(\'sw-update-banner\').remove()" style="background:none;border:none;color:var(--text-3);font-size:1.1rem;cursor:pointer;padding:2px 4px">✕</button>';
+    document.body.prepend(banner);
+  }
+};
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'SW_UPDATED') window._showSwUpdateNotif();
+  });
+}
+
 window.dismissPWABanner = function() {
   localStorage.setItem('pwaBannerDismissed', '1');
   var b = document.getElementById('pwa-banner'); if (b) b.style.display = 'none';

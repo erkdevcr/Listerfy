@@ -350,9 +350,7 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js")
       .catch(function(e) { console.log("SW error:", e); });
   });
-  navigator.serviceWorker.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'SW_UPDATED') window.location.reload();
-  });
+  // SW_UPDATED handled globally in i18n.js
 }
 </script>
 
