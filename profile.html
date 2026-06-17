@@ -347,13 +347,6 @@ function renderProfile() {
           <button class="font-size-opt ${fs==='xl'?'active':''}" onclick="setFontSize('xl')">${t('fontXL')}</button>
         </div>
       </div>
-      <div id="profile-update-row" class="profile-row" onclick="sessionStorage.removeItem('swUpdatePending');window.location.reload()" style="cursor:pointer;${sessionStorage.getItem('swUpdatePending') === '1' ? '' : 'display:none'}">
-        <span class="profile-row-label" style="display:flex;flex-direction:column;gap:2px">
-          🔄 ${t('swUpdateAvailable')}
-          <span style="font-size:var(--fs-xs);color:var(--text-3);font-weight:400">${t('swUpdateBtn')}</span>
-        </span>
-        <span style="color:var(--brand);font-weight:700;font-size:var(--fs-sm);flex-shrink:0">${t('swUpdateBtn')} ›</span>
-      </div>
       <div id="profile-install-row" class="profile-row" onclick="window.installPWA()" style="cursor:pointer;${window.isPWAInstalled() ? 'display:none' : ''}">
         <span class="profile-row-label" style="display:flex;flex-direction:column;gap:2px">
           ${t('installApp')}
@@ -787,7 +780,6 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js", { updateViaCache: 'none' })
       .catch(function(e) { console.log("SW error:", e); });
   });
-  // SW_UPDATED handled globally in i18n.js
 }
 // Show install row if prompt fires after profile renders
 document.addEventListener('installpromptready', function() {

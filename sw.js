@@ -1,5 +1,5 @@
 // sw.js — Listerfy Service Worker
-const CACHE = 'listerfy-v10';
+const CACHE = 'listerfy-v13';
 const OFFLINE = [
   './app.html',
   './list.html',
@@ -44,8 +44,10 @@ self.addEventListener('fetch', function(e) {
   if (e.request.url.includes('supabase.co')) return;
   if (e.request.url.includes('cdn.jsdelivr.net')) return;
 
+  // Force bypass of browser HTTP cache for own-origin assets
+  var fetchReq = new Request(e.request, { cache: 'no-cache' });
   e.respondWith(
-    fetch(e.request)
+    fetch(fetchReq)
       .then(function(res) {
         if (res && res.status === 200) {
           var clone = res.clone();

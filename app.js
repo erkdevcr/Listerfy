@@ -268,14 +268,11 @@ window.loadNotifications = function() {
     .order('created_at', { ascending: false }).limit(20).then(function(res) {
     var notifs = res.data || [];
     var unreadCount = notifs.filter(function(n){ return !n.is_read; }).length;
-    var swExtra = window._swUpdatePending ? 1 : 0;
-    updateNotifBadge(unreadCount + swExtra);
+    updateNotifBadge(unreadCount);
     var list = document.getElementById('notif-list');
     if (!list) return;
-    var swItem = document.getElementById('notif-sw-update');
     if (!notifs.length) {
       list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:var(--fs-sm)">' + t('noNotifications') + '</div>';
-      if (swItem) list.insertBefore(swItem, list.firstChild);
       return;
     }
     list.innerHTML = notifs.map(function(n) {
@@ -290,12 +287,6 @@ window.loadNotifications = function() {
         '<div class="notif-text">' + text + '</div>' +
         '<div class="notif-time">' + timeAgo(n.created_at) + '</div>' + actions + '</div>';
     }).join('');
-    // Re-inject SW update item at top if pending
-    if (window._swUpdatePending) {
-      var existing = document.getElementById('notif-sw-update');
-      if (!existing) { window._swUpdatePending = false; window._showSwUpdateNotif(); }
-      else list.insertBefore(existing, list.firstChild);
-    }
   });
 }
 
