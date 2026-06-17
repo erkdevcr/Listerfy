@@ -780,6 +780,9 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js")
       .catch(function(e) { console.log("SW error:", e); });
   });
+  navigator.serviceWorker.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'SW_UPDATED') window.location.reload();
+  });
 }
 // Show install row if prompt fires after profile renders
 document.addEventListener('installpromptready', function() {

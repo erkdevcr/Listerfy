@@ -98,21 +98,37 @@
   <button class="add-pill-main" onclick="toggleAddPanel()" data-i18n="add">+ Add</button>
 </div>
 
-<!-- Add panel (expanded) -->
-<div class="add-panel hidden" id="add-panel">
-  <div style="display:flex;gap:8px;align-items:center">
-    <input class="input" type="text" id="item-input" style="flex:1"
-           data-i18n-placeholder="itemName" placeholder="Escribe un artículo..."
-           onkeydown="if(event.key==='Enter') addItem()"/>
-    <button class="btn btn-brand" onclick="addItem()" id="btn-add-item" data-i18n="add">+ Add</button>
-    <button onclick="closeAddPanel()" style="background:none;border:none;color:var(--text-3);font-size:1.4rem;cursor:pointer;padding:4px 6px;line-height:1;flex-shrink:0">✕</button>
-  </div>
-  <div style="display:flex;gap:8px">
-    <select class="input" id="item-cat" style="flex:2"></select>
-    <input class="input" type="text" id="item-qty" style="flex:1;min-width:70px"
-           data-i18n-placeholder="quantity" placeholder="Cantidad" maxlength="20"/>
-    <input class="input" type="number" id="item-price" style="flex:1;min-width:80px;display:none"
-           data-i18n-placeholder="price" placeholder="Precio" min="0" step="any"/>
+<!-- Add modal -->
+<div class="modal-overlay hidden centered" id="add-panel">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" data-i18n="addItem">Agregar artículo</div>
+    <div class="modal-body">
+      <div class="input-group">
+        <label class="input-label" data-i18n="itemName">Nombre</label>
+        <input class="input" type="text" id="item-input" maxlength="80"
+               data-i18n-placeholder="itemName" placeholder="Escribe un artículo..."
+               onkeydown="if(event.key==='Enter') addItem()"/>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div class="input-group" style="flex:1">
+          <label class="input-label" data-i18n="quantity">Cantidad</label>
+          <input class="input" type="text" id="item-qty" maxlength="20"/>
+        </div>
+        <div class="input-group" style="flex:1" id="add-price-group">
+          <label class="input-label" data-i18n="price">Precio</label>
+          <input class="input" type="number" id="item-price" min="0" step="any"/>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label" data-i18n="category">Categoría</label>
+        <select class="input" id="item-cat"></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeAddPanel()" data-i18n="cancel">Cancelar</button>
+      <button class="btn btn-brand" onclick="addItem()" id="btn-add-item" data-i18n="add">+ Add</button>
+    </div>
   </div>
 </div>
 
@@ -333,6 +349,9 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", function() {
     navigator.serviceWorker.register("./sw.js")
       .catch(function(e) { console.log("SW error:", e); });
+  });
+  navigator.serviceWorker.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'SW_UPDATED') window.location.reload();
   });
 }
 </script>

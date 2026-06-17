@@ -206,7 +206,7 @@ window.loadAll = function() {
     window.renderCatOptions('item-cat');
     window.renderCatOptions('edit-cat');
     // Sync price field visibility and nav button on load
-    var ip = document.getElementById('item-price'); if (ip) ip.style.display = window._showPrices ? '' : 'none';
+    var apg = document.getElementById('add-price-group'); if (apg) apg.style.display = window._showPrices ? '' : 'none';
     var epg = document.getElementById('edit-price-group'); if (epg) epg.style.display = window._showPrices ? '' : 'none';
     var pb = document.getElementById('btn-prices-nav'); if (pb) pb.classList.toggle('active', window._showPrices);
     window.renderPage();
@@ -276,7 +276,7 @@ window._showPrices = localStorage.getItem('showPrices') === '1';
 window.togglePrices = function() {
   window._showPrices = !window._showPrices;
   localStorage.setItem('showPrices', window._showPrices ? '1' : '0');
-  var ip = document.getElementById('item-price'); if (ip) ip.style.display = window._showPrices ? '' : 'none';
+  var apg = document.getElementById('add-price-group'); if (apg) apg.style.display = window._showPrices ? '' : 'none';
   var epg = document.getElementById('edit-price-group'); if (epg) epg.style.display = window._showPrices ? '' : 'none';
   var pb = document.getElementById('btn-prices-nav'); if (pb) pb.classList.toggle('active', window._showPrices);
   window.renderPage();
